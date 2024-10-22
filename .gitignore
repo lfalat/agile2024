@@ -362,3 +362,5 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 /AGILE2024_BE/dbWallet
+/AGILE2024_BE/appsettings.json
+/AGILE2024_BE/appsettings.json
