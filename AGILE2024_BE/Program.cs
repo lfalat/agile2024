@@ -11,6 +11,8 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddAntiforgery();
 
+builder.Services.AddCors();
+
 builder.Services.AddMySqlDataSource(config.GetConnectionString("Azure_MySql")!);
 
 builder.Services.AddAuthentication(x =>
@@ -48,6 +50,11 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseCors(builder => builder
+    .AllowAnyOrigin()
+    .AllowAnyMethod()
+    .AllowAnyHeader());
 
 app.UseAuthentication();
 app.UseAuthorization();
