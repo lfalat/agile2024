@@ -48,7 +48,7 @@ namespace AGILE2024_BE.Controllers
             (string hashedPassword, byte[] salt) = PasswordHasher.HashPassword(req.Password);
 
             using var connection = _database.OpenConnection();
-            string query2 = "insert into user_tab (email, password, salt, name, surname, id_role, title_Before, title_After, id_Superior) values(@parEmail, @parPassword, @parSalt, @parName, @parSurname, @parRole, @parTitle_Before, @parTitle_After, @parId_Superior)";
+            string query2 = "insert into user_tab (email, password, salt, name, surname, id_role, title_before, title_after, id_superior) values(@parEmail, @parPassword, @parSalt, @parName, @parSurname, @parRole, @parTitle_Before, @parTitle_After, @parId_Superior)";
             using MySqlCommand command2 = new MySqlCommand(query2, connection);
             command2.Parameters.AddWithValue("parEmail", req.Email);
             command2.Parameters.AddWithValue("parPassword", hashedPassword);
