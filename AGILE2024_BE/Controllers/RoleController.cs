@@ -23,7 +23,7 @@ namespace AGILE2024_BE.Controllers
 
         [Authorize(Roles = "Spravca")]
         [HttpGet]
-        public IEnumerable<User> Get()
+        public IEnumerable<RegisterUsers> Get()
         {
             using var connection = _database.OpenConnection();
 
@@ -33,14 +33,16 @@ namespace AGILE2024_BE.Controllers
             command.Prepare();
             using var reader = command.ExecuteReader();
             
-            List<User> list = new List<User>();
+            List<RegisterUsers> list = new List<RegisterUsers>();
             while (reader.Read())
             {
-                User role = new User()
+                RegisterUsers role = new RegisterUsers()
                 {
-                    Id_Role = reader.GetInt32("id_role"),
-                    Label = reader.GetString("label"),
-                    Description = reader.IsDBNull("description") ? null : reader.GetString("description")
+                    Email = reader.GetString("email"),
+                    Name = reader.GetString("name"),
+                    Surname = reader.GetString("surname"),
+                    Title_Before = reader.GetString("title_before"),
+                    Title_After = reader.GetString("title_after")
                 };
                 list.Add(role);
             }
