@@ -2,6 +2,7 @@
 using AGILE2024_BE.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
 using MySqlConnector;
 using System.Text.RegularExpressions;
 
@@ -30,7 +31,7 @@ namespace AGILE2024_BE.Controllers
         public IActionResult Post([FromBody] RegisterRequestCustom req)
         {
             IActionResult returnAction = CheckForm(req);
-            if (returnAction != Ok())
+            if (returnAction != null)
                 return returnAction;
             /**using var connection = _database.OpenConnection();
 
@@ -66,10 +67,10 @@ namespace AGILE2024_BE.Controllers
             return rowsAffected > 0 ? Ok("User registered successfully") : StatusCode(500, "An error occurred while registering the user");
         }
 
-        private IActionResult CheckEmail(string email)
+        private IActionResult? CheckEmail(string email)
         {
             // Kontrola na vyplnenie emailu
-            if (email == null)
+            if (string.IsNullOrEmpty(email))
             {
                 return BadRequest("Email musí byť vyplnený");
             }
@@ -89,18 +90,18 @@ namespace AGILE2024_BE.Controllers
             {
                 return Conflict("User with this email already exists!");
             }
-            return Ok();
+            return null;
         }
-        private IActionResult CheckPassword(string password, string refPassword)
+        private IActionResult? CheckPassword(string password, string refPassword)
         {
             int passwordLength = 13;
             // Kontrola na vyplnenie hesla
-            if (password == null)
+            if (string.IsNullOrEmpty(password))
             {
                 return BadRequest("Heslo musí byť vyplnené");
             }
             // Kontrola na potvrdenie hesla
-            if (refPassword == null)
+            if (string.IsNullOrEmpty(refPassword))
             {
                 return BadRequest("Potvrdenie hesla musí byť vyplnené");
             }
@@ -138,30 +139,30 @@ namespace AGILE2024_BE.Controllers
             {
                 return BadRequest("Heslo musí obsahovať aspoň jeden špeciálny znak (napr. !@#$%^&*).");
             }
-            return Ok();
+            return null;
         }
 
-        private IActionResult CheckForm([FromBody] RegisterRequestCustom req)
+        private IActionResult? CheckForm([FromBody] RegisterRequestCustom req)
         {
             if (req == null)
             {
                 return BadRequest("Neplatný formát požiadavky");
             }
-            if (req.Surname == null)
+            if (string.IsNullOrEmpty(req.Surname))
             {
                 return BadRequest("Priezvisko musí byť vyplnené");
             }
-            if (req.Name == null)
+            if (string.IsNullOrEmpty(req.Name))
             {
                 return BadRequest("Meno musí byť vyplnené");
             }
             IActionResult returnAction = CheckEmail(req.Email);
-            if (returnAction != Ok())
+            if (returnAction != null)
                 return returnAction;
             returnAction = CheckPassword(req.Password, req.ConfirmPassword);
-            if (returnAction != Ok())
+            if (returnAction != null)
                 return returnAction;
-            return Ok();
+            return null;
         }
     }
 }

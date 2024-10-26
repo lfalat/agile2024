@@ -2,7 +2,7 @@
 {
     public class Role
     {
-        public int Id_Role { get; set; }
+        public int? Id_Role { get; set; }
         public required string Name { get; set; }
         public string? Description { get; set; }
     }
