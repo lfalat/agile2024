@@ -1,5 +1,7 @@
+using AGILE2024_BE;
 using AGILE2024_BE.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using MySqlConnector;
 using System.Text;
@@ -40,8 +42,27 @@ builder.Services.AddAuthorization(options =>
 });
 
 builder.Services.AddControllers();
-
+builder.Services.AddTransient<Seed>();
+//builder.Services.AddDbContext<DataContext>( options => options.UseSqlServer(config.GetConnectionString("Azure_MySql")));
+builder.Services.AddDbContext<DataContext>(options =>
+{
+    var connectionString = builder.Configuration.GetConnectionString("Azure_MySql");
+    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
+});
 var app = builder.Build();
+if (args.Length == 1 && args[0].ToLower() == "seeddata")
+    SeedData(app);
+
+void SeedData(IHost app)
+{
+    var scopedFactory = app.Services.GetService<IServiceScopeFactory>();
+
+    using (var scope = scopedFactory.CreateScope())
+    {
+        var service = scope.ServiceProvider.GetService<Seed>();
+        service.SeedDataContext();
+    }
+}
 
 if (app.Environment.IsDevelopment())
 {

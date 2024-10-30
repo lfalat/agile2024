@@ -3,7 +3,7 @@ using AGILE2024_BE.Data.Models;
 using AGILE2024_BE.Data.Requests;
 using AGILE2024_BE.Data.Responses;
 using AGILE2024_BE.Helpers;
-using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using MySqlConnector;
 
@@ -13,15 +13,53 @@ namespace AGILE2024_BE.Controllers
     [ApiController]
     public class LoginController : ControllerBase
     {
-        private IConfiguration _config;
-        private MySqlDataSource _database;
-        public LoginController(IConfiguration config, MySqlDataSource database)
+        private DataContext _context;
+        public LoginController(DataContext context)
         {
-            _config = config;
-            _database = database;
+            _context = context;
         }
-
         [HttpPost]
+        public IActionResult Post([FromBody] LoginRequestCustom req)
+        {
+            var user = _context.Users.Where(u => u.Email == req.Email).FirstOrDefault();
+
+            if (user == null)
+            {
+                return NotFound("User with this email does not exist!");
+            }
+
+            bool match = PasswordHasher.VerifyPassword(user.Password, user.Salt, req.Password);
+
+            if (!match)
+            {
+                return Unauthorized("Passwords do not match!");
+            }
+
+            string token = string.Empty;
+
+            try
+            {
+                //token = JWTHelper.CreateJWT(user, _config); TODO: Prerobiť JWS Token
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+
+            LoginResponseCustom res = new LoginResponseCustom()
+            {
+                Email = user.Email,
+                Name = user.Name,
+                Surname = user.Surname,
+                Token = token,
+                Role = ((Roles)user.Role.Id_role).ToString(),
+                Title_After = user.Title_after,
+                Title_Before = user.Title_before
+            };
+
+            return Ok(res);
+        }
+        /**[HttpPost]
         public IActionResult Post([FromBody] LoginRequestCustom req)
         {
             using var connection = _database.OpenConnection();
@@ -84,6 +122,6 @@ namespace AGILE2024_BE.Controllers
             };
 
             return Ok(res);
-        }
+        }**/
     }
 }
