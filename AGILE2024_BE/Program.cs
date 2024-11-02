@@ -1,85 +1,118 @@
-using AGILE2024_BE;
 using AGILE2024_BE.Data;
+using AGILE2024_BE.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using MySqlConnector;
 using System.Text;
 
-var builder = WebApplication.CreateBuilder(args);
-var config = builder.Configuration;
+//if (args.Length == 1 && args[0].ToLower() == "seeddata")
+//    SeedData(app);
 
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-builder.Services.AddAntiforgery();
+//void SeedData(IHost app)
+//{
+//    var scopedFactory = app.Services.GetService<IServiceScopeFactory>();
 
-builder.Services.AddCors();
+//    using (var scope = scopedFactory.CreateScope())
+//    {
+//        var service = scope.ServiceProvider.GetService<Seed>();
+//        service.SeedDataContext();
+//    }
+//}
 
-builder.Services.AddMySqlDataSource(config.GetConnectionString("Azure_MySql")!);
 
-builder.Services.AddAuthentication(x =>
+namespace AGILE2024_BE.API
 {
-    x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    x.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-    x.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
-}).AddJwtBearer(x => {
-    x.TokenValidationParameters = new TokenValidationParameters
+    class Program
     {
-        ValidateIssuerSigningKey = true,
-        ValidateLifetime = true,
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["JWT_Secret"]!)),
-        ValidateIssuer = false,
-        ValidateAudience = false
-    };
-});
+        public static async Task Main(string[] args)
+        {
+            var webAppBuilder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddAuthorization(options =>
-{
-    options.AddPolicy("RequireSpravcaRole", policy => policy.RequireRole(Roles.Spravca.ToString()));
-    options.AddPolicy("RequireZamestnanecRole", policy => policy.RequireRole(Roles.Zamestnanec.ToString()));
-    options.AddPolicy("RequirePowerUserRole", policy => policy.RequireRole(Roles.PowerUser.ToString()));
-    options.AddPolicy("RequireVeduciRole", policy => policy.RequireRole(Roles.Veduci.ToString()));
-});
+            AddServices(webAppBuilder);
 
-builder.Services.AddControllers();
-builder.Services.AddTransient<Seed>();
-//builder.Services.AddDbContext<DataContext>( options => options.UseSqlServer(config.GetConnectionString("Azure_MySql")));
-builder.Services.AddDbContext<DataContext>(options =>
-{
-    var connectionString = builder.Configuration.GetConnectionString("Azure_MySql");
-    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
-});
-var app = builder.Build();
-if (args.Length == 1 && args[0].ToLower() == "seeddata")
-    SeedData(app);
+            var webApp = webAppBuilder.Build();
 
-void SeedData(IHost app)
-{
-    var scopedFactory = app.Services.GetService<IServiceScopeFactory>();
+            AppSetup(webApp);
 
-    using (var scope = scopedFactory.CreateScope())
-    {
-        var service = scope.ServiceProvider.GetService<Seed>();
-        service.SeedDataContext();
+            using (var scope = webApp.Services.CreateScope())
+            {
+                var services = scope.ServiceProvider;
+                await Seed.InitializeAsync(services);
+            }
+
+            webApp.Run();
+        }
+
+        private static void AddServices(WebApplicationBuilder webAppBuilder)
+        {
+            var webAppConfig = webAppBuilder.Configuration;
+
+            webAppBuilder.Services.AddEndpointsApiExplorer();
+            webAppBuilder.Services.AddSwaggerGen();
+            webAppBuilder.Services.AddAntiforgery();
+
+            webAppBuilder.Services.AddCors();
+
+            webAppBuilder.Services.AddDbContext<AgileDBContext>(options =>
+            {
+                var connectionString = webAppConfig.GetConnectionString("Azure_MySql");
+                options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
+            });
+
+            webAppBuilder.Services.AddIdentity<ExtendedIdentityUser, IdentityRole>(o =>
+            {
+                o.Password.RequiredLength = 13;
+                o.Password.RequireNonAlphanumeric = true;
+                o.Password.RequireUppercase = true;
+                o.Password.RequireLowercase = true;
+                o.Password.RequireDigit = true;
+            })
+                .AddEntityFrameworkStores<AgileDBContext>()
+                .AddDefaultTokenProviders();
+
+            webAppBuilder.Services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+            }).AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters()
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidIssuer = webAppConfig["Jwt:Issuer"],
+                    ValidAudience = webAppConfig["Jwt:Audience"],
+                    ClockSkew = TimeSpan.Zero,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(webAppConfig["Jwt:Key"]))
+                };
+            });
+
+            webAppBuilder.Services.AddControllers();
+        }
+
+        private static void AppSetup(WebApplication webApp)
+        {
+            if (webApp.Environment.IsDevelopment())
+            {
+                webApp.UseSwagger();
+                webApp.UseSwaggerUI();
+            }
+
+            webApp.UseHttpsRedirection();
+
+            webApp.UseCors(builder => builder
+                .AllowAnyOrigin()
+                .AllowAnyMethod()
+                .AllowAnyHeader());
+
+            webApp.UseAuthentication();
+            webApp.UseAuthorization();
+
+            webApp.MapControllers();
+        }
     }
 }
-
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-
-app.UseHttpsRedirection();
-
-app.UseCors(builder => builder
-    .AllowAnyOrigin()
-    .AllowAnyMethod()
-    .AllowAnyHeader());
-
-app.UseAuthentication();
-app.UseAuthorization();
-
-app.MapControllers();
-
-app.Run();
