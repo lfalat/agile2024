@@ -67,6 +67,7 @@ namespace AGILE2024_BE.API
                 o.Password.RequireUppercase = true;
                 o.Password.RequireLowercase = true;
                 o.Password.RequireDigit = true;
+                o.User.RequireUniqueEmail = true;
             })
                 .AddEntityFrameworkStores<AgileDBContext>()
                 .AddDefaultTokenProviders();

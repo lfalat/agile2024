@@ -47,7 +47,7 @@ namespace AGILE2024_BE
                         Email = "admin@admin.com"
                     };
 
-                    await _userManager.CreateAsync(newAdmin, "admin");
+                    await _userManager.CreateAsync(newAdmin, "AdminAdmin_123");
 
                     await _userManager.AddToRoleAsync(newAdmin, Roles.Spravca);
                 }
