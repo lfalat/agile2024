@@ -1,6 +1,6 @@
 ﻿namespace AGILE2024_BE.Models
 {
-    public static class Roles
+    public static class RolesDef
     {
         public const string Spravca = "Správca systému";
         public const string Zamestnanec = "Zamestnanec";

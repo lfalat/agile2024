@@ -2,7 +2,7 @@
 {
     public class LoginResponse
     {
-        public required string JwtToken { get; set; }
-        public required string RefreshToken { get; set; }
+        public required string NewJwtToken { get; set; }
+        public required string NewRefreshToken { get; set; }
     }
 }

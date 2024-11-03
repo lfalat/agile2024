@@ -49,7 +49,7 @@ namespace AGILE2024_BE
 
                     await _userManager.CreateAsync(newAdmin, "AdminAdmin_123");
 
-                    await _userManager.AddToRoleAsync(newAdmin, Roles.Spravca);
+                    await _userManager.AddToRoleAsync(newAdmin, RolesDef.Spravca);
                 }
             }
         }
