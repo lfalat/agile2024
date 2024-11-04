@@ -18,7 +18,10 @@ namespace AGILE2024_BE.Data
         //Tento region služi na zadefinovane tabuliek v databaze
         //DbSet = tabuľka, typ v zobačikoch definuje stlpce v databaze
         #region TABLES
-        //public DbSet<User> users 
+        public DbSet<Division> Divisions { get; set; }
+        public DbSet<Location> Locations { get; set; }
+        public DbSet<Organization> Organizations { get; set; }
+        public DbSet<WorkPosition> WorkPositions { get; set; }
         #endregion
 
     }

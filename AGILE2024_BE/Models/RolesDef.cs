@@ -5,6 +5,6 @@
         public const string Spravca = "Správca systému";
         public const string Zamestnanec = "Zamestnanec";
         public const string PowerUser = "Výkonný používateľ (Power User)";
-        public const string Veduci = "Vedúci zamestanec";
+        public const string Veduci = "Vedúci zamestnanec";
     }
 }

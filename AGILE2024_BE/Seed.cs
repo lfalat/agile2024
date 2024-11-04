@@ -38,19 +38,61 @@ namespace AGILE2024_BE
                     await _roleManager.CreateAsync(new IdentityRole("Vedúci zamestnanec"));
                 }
           
-                ExtendedIdentityUser? admin = await _userManager.FindByEmailAsync("admin@admin.com");
+                ExtendedIdentityUser? admin = await _userManager.FindByEmailAsync("patrik@email.com");
                 if (admin == null)
                 {
-                    ExtendedIdentityUser newAdmin = new ExtendedIdentityUser()
+                    string[] userNames = ["patrik", "brano", "lukas", "michal", "alexandra", "sara"];
+                    foreach (string userName in userNames)
                     {
-                        UserName = "admin@admin.com",
-                        Email = "admin@admin.com"
+                        ExtendedIdentityUser user = new ExtendedIdentityUser()
+                        {
+                            UserName = $"{userName}@email.com",
+                            Email = $"{userName}@email.com"
+                        };
+
+
+                        await _userManager.CreateAsync(user, "AdminAdmin123!");
+                        await _userManager.AddToRoleAsync(user, RolesDef.Spravca);
+                    }
+                }
+                ExtendedIdentityUser? zam = await _userManager.FindByEmailAsync("zamestnanec@email.com");
+                if (zam == null)
+                {
+                    ExtendedIdentityUser zamestnanec = new ExtendedIdentityUser()
+                    {
+                        UserName = "zamestnanec@email.com",
+                        Email = "zamestnanec@email.com"
                     };
 
-                    await _userManager.CreateAsync(newAdmin, "AdminAdmin_123");
-
-                    await _userManager.AddToRoleAsync(newAdmin, RolesDef.Spravca);
+                    await _userManager.CreateAsync(zamestnanec, "AdminAdmin123!");
+                    await _userManager.AddToRoleAsync(zamestnanec, RolesDef.Zamestnanec);
                 }
+
+                ExtendedIdentityUser? pu = await _userManager.FindByEmailAsync("poweruser@email.com");
+                if (pu == null)
+                {
+                    ExtendedIdentityUser powerUser = new ExtendedIdentityUser()
+                    {
+                        UserName = "poweruser@email.com",
+                        Email = "poweruser@email.com"
+                    };
+
+                    await _userManager.CreateAsync(powerUser, "AdminAdmin123!");
+                    await _userManager.AddToRoleAsync(powerUser, RolesDef.PowerUser);
+                }
+
+                ExtendedIdentityUser? ved = await _userManager.FindByEmailAsync("veduci@email.com");
+                if (ved == null)
+                {
+                    ExtendedIdentityUser veduci = new ExtendedIdentityUser()
+                    {
+                        UserName = "veduci@email.com",
+                        Email = "veduci@email.com"
+                    };
+
+                    await _userManager.CreateAsync(veduci, "AdminAdmin123!");
+                }
+                    await _userManager.AddToRoleAsync(ved, RolesDef.Veduci);
             }
         }
     }

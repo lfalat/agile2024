@@ -12,6 +12,7 @@ namespace AGILE2024_BE.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Roles = RolesDef.Spravca)]
     public class RoleController : ControllerBase
     {
         private UserManager<ExtendedIdentityUser> userManager;

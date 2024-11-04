@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using AGILE2024_BE.Data;
 
 namespace AGILE2024_BE.Controllers
 {
@@ -14,12 +15,16 @@ namespace AGILE2024_BE.Controllers
     public class AuthController : ControllerBase
     {
         private UserManager<ExtendedIdentityUser> userManager;
+        private RoleManager<IdentityRole> roleManager;
         private IConfiguration config;
+        private AgileDBContext dbContext;
 
-        public AuthController(UserManager<ExtendedIdentityUser> um, IConfiguration co)
+        public AuthController(UserManager<ExtendedIdentityUser> um, IConfiguration co, RoleManager<IdentityRole> rm, AgileDBContext db)
         {
             this.userManager = um;
             this.config = co;
+            this.roleManager = rm;
+            this.dbContext = db;
         }
 
         [HttpPost("RefreshToken")]
