@@ -68,7 +68,7 @@ namespace AGILE2024_BE.Controllers
                     TitleBefore = user.Title_before,
                     TitleAfter = user.Title_after,
                     Email = user.Email!,
-                    Role = roles.FirstOrDefault();
+                    Role = roles.FirstOrDefault()
                 });
             }
 
