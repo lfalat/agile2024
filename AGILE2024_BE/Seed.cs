@@ -90,9 +90,9 @@ namespace AGILE2024_BE
                         Email = "veduci@email.com"
                     };
 
+                    await _userManager.AddToRoleAsync(veduci, RolesDef.Veduci);
                     await _userManager.CreateAsync(veduci, "AdminAdmin123!");
                 }
-                    await _userManager.AddToRoleAsync(ved, RolesDef.Veduci);
             }
         }
     }
