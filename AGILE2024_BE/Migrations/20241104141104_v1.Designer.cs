@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AGILE2024_BE.Migrations
 {
     [DbContext(typeof(AgileDBContext))]
-    [Migration("20241104082916_v1")]
+    [Migration("20241104141104_v1")]
     partial class v1
     {
         /// <inheritdoc />

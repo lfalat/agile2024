@@ -37,19 +37,23 @@ namespace AGILE2024_BE
                 {
                     await _roleManager.CreateAsync(new IdentityRole("Vedúci zamestnanec"));
                 }
-          
+
                 ExtendedIdentityUser? admin = await _userManager.FindByEmailAsync("patrik@email.com");
                 if (admin == null)
                 {
-                    string[] userNames = ["patrik", "brano", "lukas", "michal", "alexandra", "sara"];
-                    foreach (string userName in userNames)
+                    string[] userNames = { "patrik", "brano", "lukas", "michal", "alexandra", "sara" };
+                    string[] lastNames = { "balvan", "brano", "kišša", "ondrejka", "vojtasova", "papšova" };
+
+                    for (int i = 0; i < userNames.Length; i++)
                     {
                         ExtendedIdentityUser user = new ExtendedIdentityUser()
                         {
-                            UserName = $"{userName}@email.com",
-                            Email = $"{userName}@email.com"
+                            UserName = $"{userNames[i]}@email.com",
+                            Email = $"{userNames[i]}@email.com",
+                            Name = userNames[i],
+                            Surname = lastNames[i],
+                            Title_before = "Bc."
                         };
-
 
                         await _userManager.CreateAsync(user, "AdminAdmin123!");
                         await _userManager.AddToRoleAsync(user, RolesDef.Spravca);
@@ -61,7 +65,9 @@ namespace AGILE2024_BE
                     ExtendedIdentityUser zamestnanec = new ExtendedIdentityUser()
                     {
                         UserName = "zamestnanec@email.com",
-                        Email = "zamestnanec@email.com"
+                        Email = "zamestnanec@email.com",
+                        Name = "Meno",
+                        Surname = "Priezvisko"
                     };
 
                     await _userManager.CreateAsync(zamestnanec, "AdminAdmin123!");
@@ -74,7 +80,9 @@ namespace AGILE2024_BE
                     ExtendedIdentityUser powerUser = new ExtendedIdentityUser()
                     {
                         UserName = "poweruser@email.com",
-                        Email = "poweruser@email.com"
+                        Email = "poweruser@email.com",
+                        Name = "Meno",
+                        Surname = "Priezvisko"
                     };
 
                     await _userManager.CreateAsync(powerUser, "AdminAdmin123!");
@@ -87,11 +95,13 @@ namespace AGILE2024_BE
                     ExtendedIdentityUser veduci = new ExtendedIdentityUser()
                     {
                         UserName = "veduci@email.com",
-                        Email = "veduci@email.com"
+                        Email = "veduci@email.com",
+                        Name = "Meno",
+                        Surname = "Priezvisko"
                     };
 
-                    await _userManager.AddToRoleAsync(veduci, RolesDef.Veduci);
                     await _userManager.CreateAsync(veduci, "AdminAdmin123!");
+                    await _userManager.AddToRoleAsync(veduci, RolesDef.Veduci);
                 }
             }
         }
