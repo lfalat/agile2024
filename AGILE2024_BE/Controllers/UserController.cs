@@ -59,17 +59,16 @@ namespace AGILE2024_BE.Controllers
             foreach (var user in users)
             {
                 var roles = await userManager.GetRolesAsync(user);
-                var role = roles.FirstOrDefault(); // Assuming a user can only have one role
 
                 userIdentityResponses.Add(new UserIdentityResponse
                 {
                     id = user.Id,
-                    FirstName = user.Name, // Ensure these properties exist in your user entity
+                    FirstName = user.Name,
                     LastName = user.Surname,
                     TitleBefore = user.Title_before,
                     TitleAfter = user.Title_after,
                     Email = user.Email!,
-                    Role = role // This will be null if the user has no role
+                    Role = roles.FirstOrDefault();
                 });
             }
 
