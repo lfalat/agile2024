@@ -1,5 +1,5 @@
 ﻿using AGILE2024_BE.Helpers;
-using AGILE2024_BE.Models;
+using AGILE2024_BE.Models.Identity;
 using AGILE2024_BE.Models.Response;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;

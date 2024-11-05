@@ -1,5 +1,5 @@
 ﻿using AGILE2024_BE.Data;
-using AGILE2024_BE.Models;
+using AGILE2024_BE.Models.Identity;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;

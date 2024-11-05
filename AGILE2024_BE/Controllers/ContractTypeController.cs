@@ -1,6 +1,5 @@
 ﻿using AGILE2024_BE.Data;
 using AGILE2024_BE.Models.Identity;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -9,15 +8,14 @@ namespace AGILE2024_BE.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = RolesDef.Spravca)]
-    public class LocationController : ControllerBase
+    public class ContractTypeController : ControllerBase
     {
         private UserManager<ExtendedIdentityUser> userManager;
         private RoleManager<IdentityRole> roleManager;
         private IConfiguration config;
         private AgileDBContext dbContext;
 
-        public LocationController(UserManager<ExtendedIdentityUser> um, IConfiguration co, RoleManager<IdentityRole> rm, AgileDBContext db)
+        public ContractTypeController(UserManager<ExtendedIdentityUser> um, IConfiguration co, RoleManager<IdentityRole> rm, AgileDBContext db)
         {
             this.userManager = um;
             this.config = co;

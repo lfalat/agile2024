@@ -1,4 +1,4 @@
-﻿namespace AGILE2024_BE.Models
+﻿namespace AGILE2024_BE.Models.Identity
 {
     public static class RolesDef
     {

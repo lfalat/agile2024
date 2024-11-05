@@ -1,5 +1,4 @@
-﻿using AGILE2024_BE.Models;
-using AGILE2024_BE.Models.Requests;
+﻿using AGILE2024_BE.Models.Requests;
 using AGILE2024_BE.Models.Response;
 using AGILE2024_BE.Helpers;
 using Microsoft.AspNetCore.Authorization;
@@ -7,6 +6,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using AGILE2024_BE.Data;
+using AGILE2024_BE.Models.Identity;
 
 namespace AGILE2024_BE.Controllers
 {
