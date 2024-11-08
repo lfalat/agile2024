@@ -65,5 +65,34 @@ namespace AGILE2024_BE.Controllers
 
             return Ok();
         }
+
+        [HttpGet("{departmentId}")]
+        [Authorize]
+        public async Task<IActionResult> GetEmployeeCardByUserId(Guid departmentId)
+        {
+            var department = await dbContext.Departments
+        .Include(d => d.Organization)
+        .Include(d => d.ParentDepartment)
+        .FirstOrDefaultAsync(d => d.Id == departmentId);
+
+            if (department == null)
+            {
+                return NotFound(new { message = "Oddelenie s týmto ID neexistuje." });
+            }
+
+            var departmentResponse = new DepartmentResponse
+            {
+                Id = department.Id,
+                Name = department.Name,
+                Code = department.Code,
+                OrganizationName = department.Organization?.Name,
+                Created = department.Created,
+                LastEdited = department.LastEdited,
+                Archived = department.Archived,
+                ParentDepartmentId = department.ParentDepartment?.Id
+            };
+
+            return Ok(departmentResponse);
+        }
     }
 }
