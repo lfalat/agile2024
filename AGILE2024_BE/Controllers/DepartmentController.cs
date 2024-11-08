@@ -1,9 +1,13 @@
 ﻿using AGILE2024_BE.Data;
+using AGILE2024_BE.Models;
 using AGILE2024_BE.Models.Identity;
+using AGILE2024_BE.Models.Requests;
+using AGILE2024_BE.Models.Response;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace AGILE2024_BE.Controllers
 {
@@ -23,6 +27,43 @@ namespace AGILE2024_BE.Controllers
             this.config = co;
             this.roleManager = rm;
             this.dbContext = db;
+        }
+
+        [HttpGet("Departments")]
+        [Authorize(Roles = RolesDef.Spravca)]
+        public async Task<IActionResult> Departments()
+        {
+            var departments = await dbContext.Departments
+        .Include(d => d.Organization) 
+        .ToListAsync();
+
+
+            var departmentResponse = new List<DepartmentResponse>();
+
+            foreach (var department in departments)
+            {
+                departmentResponse.Add(new DepartmentResponse
+                {
+                    Id = department.Id,
+                    Name = department.Name,
+                    Code = department.Code,
+                    OrganizationName = department.Organization?.Name,
+                    Created = department.Created,
+                    LastEdited = department.LastEdited,
+                    Archived = department.Archived,
+                    ParentDepartmentId = department.ParentDepartment?.Id
+                });
+            }
+
+            return Ok(departmentResponse);
+        }
+
+        [HttpPost("Create")]
+        [Authorize(Roles = RolesDef.Spravca)]
+        public async Task<IActionResult> Create([FromBody] CreateDepartmentRequest createRequest)
+        {
+
+            return Ok();
         }
     }
 }
