@@ -1,6 +1,6 @@
 ﻿using AGILE2024_BE.Helpers;
 using AGILE2024_BE.Models.Identity;
-using AGILE2024_BE.Models.Requests;
+using AGILE2024_BE.Models.Requests.User;
 using AGILE2024_BE.Models.Response;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -148,11 +148,14 @@ namespace AGILE2024_BE.Controllers
                 return NotFound("User not found");
             }
             // Change user password if different
-            string resetToken = await userManager.GeneratePasswordResetTokenAsync(user);
-            IdentityResult passwordChangeResult = await userManager.ResetPasswordAsync(user, resetToken, registerRequest.Password);
-            if (!passwordChangeResult.Succeeded)
-            {
-                return BadRequest(passwordChangeResult.Errors);
+            if (!string.IsNullOrEmpty(registerRequest.Password))
+            { 
+                string resetToken = await userManager.GeneratePasswordResetTokenAsync(user);
+                IdentityResult passwordChangeResult = await userManager.ResetPasswordAsync(user, resetToken, registerRequest.Password);
+                if (!passwordChangeResult.Succeeded)
+                {
+                    return BadRequest(passwordChangeResult.Errors);
+                }
             }
             // Update user properties
             user.UserName = registerRequest.Email;

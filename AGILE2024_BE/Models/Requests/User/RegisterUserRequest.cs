@@ -1,4 +1,4 @@
-﻿namespace AGILE2024_BE.Models.Requests
+﻿namespace AGILE2024_BE.Models.Requests.User
 {
     public class RegisterUserRequest
     {
