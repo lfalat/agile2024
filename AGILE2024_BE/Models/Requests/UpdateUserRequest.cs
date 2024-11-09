@@ -1,6 +1,6 @@
 ﻿namespace AGILE2024_BE.Models.Requests
 {
-    public class RegisterUserRequest
+    public class UpdateUserRequest
     {
         public required string Email { get; init; }
         public required string Password { get; init; }
@@ -10,6 +10,5 @@
         public required string Role { get; init; }
         public string? TitleBefore { get; init; }
         public string? TitleAfter { get; init; }
-        //public int? Id_Superior { get; init; }
     }
 }
