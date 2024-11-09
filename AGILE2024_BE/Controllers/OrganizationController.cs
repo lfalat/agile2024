@@ -4,10 +4,12 @@ using AGILE2024_BE.Models.Identity;
 using AGILE2024_BE.Models.Requests;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using System.Web.Http.ModelBinding;
 
 namespace AGILE2024_BE.Controllers
 {
@@ -27,6 +29,75 @@ namespace AGILE2024_BE.Controllers
             this.roleManager = rm;
             this.dbContext = db;
         }
+
+        [HttpGet("Organizations")]
+        [Authorize(Roles = RolesDef.Spravca)]
+        public async Task<IActionResult> Organizations()
+        {
+            var organizations = await dbContext.Organizations.ToListAsync();
+
+            return Ok(organizations);
+        }
+
+        [HttpPut("Archive")]
+        [Authorize(Roles = RolesDef.Spravca)]
+        public async Task<IActionResult> Archive([FromBody] ArchiveOrganizationRequest archiveRequest)
+        {
+            if (!ModelState.IsValid) return BadRequest();
+            var organization = await dbContext.Organizations.FirstOrDefaultAsync(x => x.Id == archiveRequest.Id);
+
+            if (organization == null)
+            {
+                return NotFound("Organization not found");
+            }
+
+            if (organization.Archived == archiveRequest.Archive)
+            {
+                return Ok();
+            }
+
+            organization.Archived = !organization.Archived;
+            organization.LastEdited = DateTime.Now;
+            dbContext.Organizations.Update(organization);
+            await dbContext.SaveChangesAsync();
+            if (organization.Archived)
+            {
+                return Ok("Organization has been archived");
+            }
+            else
+            {
+                return Ok("Organization has been unarchived");
+            }
+        }
+
+        [HttpPost("Delete")]
+        [Authorize(Roles = RolesDef.Spravca)]
+        public async Task<IActionResult> Archive([FromBody] Guid selectedId)
+        {
+            if (selectedId == Guid.Empty)
+            {
+                return BadRequest("Invalid ID.");
+            }
+
+            var organization = await dbContext.Organizations.FirstOrDefaultAsync(x => x.Id == selectedId);
+
+            if (organization == null)
+            {
+                return NotFound("Organization not found.");
+            }
+
+            var departments = await dbContext.Departments.Where(x => x.Organization.Id == selectedId).ToListAsync();
+            foreach (var item in departments)
+            {
+                item.Organization = null;
+            }
+            dbContext.Departments.UpdateRange(departments);
+            dbContext.Organizations.Remove(organization);
+            await dbContext.SaveChangesAsync();
+
+            return Ok("Organization deleted.");
+        }
+
 
         [HttpPost("Register")]
         [Authorize(Roles = RolesDef.Spravca)]
