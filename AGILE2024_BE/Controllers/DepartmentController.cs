@@ -34,8 +34,38 @@ namespace AGILE2024_BE.Controllers
         public async Task<IActionResult> Departments()
         {
             var departments = await dbContext.Departments
-        .Include(d => d.Organization) 
-        .ToListAsync();
+            .Include(d => d.Organization)
+            .ToListAsync();
+
+
+            var departmentResponse = new List<DepartmentResponse>();
+
+            foreach (var department in departments)
+            {
+                departmentResponse.Add(new DepartmentResponse
+                {
+                    Id = department.Id,
+                    Name = department.Name,
+                    Code = department.Code,
+                    OrganizationName = department.Organization?.Name,
+                    Created = department.Created,
+                    LastEdited = department.LastEdited,
+                    Archived = department.Archived,
+                    ParentDepartmentId = department.ParentDepartment?.Id
+                });
+            }
+
+            return Ok(departmentResponse);
+        }
+
+        [HttpGet("UnarchivedDepartments")]
+        [Authorize(Roles = RolesDef.Spravca)]
+        public async Task<IActionResult> UnarchivedDepartments()
+        {
+            var departments = await dbContext.Departments
+            .Include(d => d.Organization)
+             .Where(d => d.Archived != true)
+            .ToListAsync();
 
 
             var departmentResponse = new List<DepartmentResponse>();
@@ -68,7 +98,7 @@ namespace AGILE2024_BE.Controllers
 
         [HttpGet("{departmentId}")]
         [Authorize]
-        public async Task<IActionResult> GetEmployeeCardByUserId(Guid departmentId)
+        public async Task<IActionResult> GetDepartmentById(Guid departmentId)
         {
             var department = await dbContext.Departments
         .Include(d => d.Organization)
@@ -93,6 +123,66 @@ namespace AGILE2024_BE.Controllers
             };
 
             return Ok(departmentResponse);
+        }
+
+        [HttpDelete("Delete/{departmentId}")]
+        [Authorize(Roles = RolesDef.Spravca)]
+        public async Task<IActionResult> Delete(Guid departmentId)
+        {
+
+            var department = await dbContext.Departments.FirstOrDefaultAsync(d => d.Id == departmentId);
+
+            if (department == null)
+            {
+                return NotFound(new { message = "Department not found" });
+            }
+
+            bool hasRelatedEntities = await dbContext.EmployeeCards 
+                               .AnyAsync(e => e.Department.Id == departmentId);
+
+            if (hasRelatedEntities)
+            {
+                return BadRequest(new { message = "Cannot delete department as it is referenced in other records." });
+            }
+
+            dbContext.Departments.Remove(department);
+            await dbContext.SaveChangesAsync();
+            return Ok(new { message = "Department deleted successfully" });
+        }
+
+        [HttpPut("Unarchive/{departmentId}")]
+        [Authorize(Roles = RolesDef.Spravca)]
+        public async Task<IActionResult> Unarchive(Guid departmentId)
+        {
+            var department = await dbContext.Departments.FirstOrDefaultAsync(d => d.Id == departmentId);
+
+            if (department == null)
+            {
+                return NotFound(new { message = "Department not found" });
+            }
+
+            department.Archived = false;
+            await dbContext.SaveChangesAsync();
+
+            return Ok(new { message = "Department archives successfully" });
+        }
+
+        [HttpPut("Archive/{departmentId}")]
+        [Authorize(Roles = RolesDef.Spravca)]
+        public async Task<IActionResult> Archive(Guid departmentId)
+        {
+            var department = await dbContext.Departments.FirstOrDefaultAsync(d => d.Id == departmentId);
+
+            if (department == null)
+            {
+                return NotFound(new { message = "Department not found" });
+            }
+
+            department.Archived = true;
+            await dbContext.SaveChangesAsync();
+
+
+            return Ok(new { message = "Department unarchived successfully" });
         }
     }
 }
