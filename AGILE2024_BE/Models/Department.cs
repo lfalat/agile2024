@@ -18,8 +18,8 @@ namespace AGILE2024_BE.Models
 
         public required string Name { get; set; }
         public required string Code { get; set; }
-        public required DateTime LastEdited { get; set; } = DateTime.Now;
-        public required DateTime Created { get; set; } = DateTime.Now;
+        public DateTime LastEdited { get; set; } = DateTime.Now;
+        public DateTime Created { get; set; } = DateTime.Now;
         public required bool Archived { get; set; } = false;
     }
 }

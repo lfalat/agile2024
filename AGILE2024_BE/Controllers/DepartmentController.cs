@@ -58,12 +58,37 @@ namespace AGILE2024_BE.Controllers
             return Ok(departmentResponse);
         }
 
+
         [HttpPost("Create")]
         [Authorize(Roles = RolesDef.Spravca)]
         public async Task<IActionResult> Create([FromBody] CreateDepartmentRequest createRequest)
         {
+            try
+            {
+                if (createRequest == null) {
+                    return BadRequest("Invalid data.");
+                }
 
-            return Ok();
+            
+                var newDepartment = new Department
+                {
+                    Id = Guid.NewGuid(), 
+                    Name = createRequest.Name,
+                    Code = createRequest.Code,
+                    Archived = createRequest.Archived
+                };
+
+                dbContext.Departments.Add(newDepartment);
+                await dbContext.SaveChangesAsync();
+
+                return Ok();
+            }
+
+            catch (Exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    "Error creating new employee record");
+            }
         }
     }
 }
