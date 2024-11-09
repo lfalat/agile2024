@@ -65,6 +65,7 @@ namespace AGILE2024_BE.Controllers
             var departments = await dbContext.Departments
             .Include(d => d.Organization)
              .Where(d => d.Archived != true)
+             //.Where(d => d.Organization.RelatedDepartments.Any())
             .ToListAsync();
 
 
@@ -92,9 +93,107 @@ namespace AGILE2024_BE.Controllers
         [Authorize(Roles = RolesDef.Spravca)]
         public async Task<IActionResult> Create([FromBody] CreateDepartmentRequest createRequest)
         {
+            try
+            {
+                if (createRequest == null)
+                {
+                    return BadRequest("Invalid data.");
+                }
+                
 
-            return Ok();
+                var organization = await dbContext.Organizations
+                .FirstOrDefaultAsync(o => o.Id.ToString() == createRequest.Organization);
+
+                if (organization == null && createRequest.Organization != null)
+                {
+                    return BadRequest($"Organization with name {createRequest.Organization} does not exist.");
+                }       
+
+
+                var newDepartment = new Department
+                {
+                    Id = Guid.NewGuid(),
+                    Name = createRequest.Name,
+                    Code = createRequest.Code,
+                    Organization = organization,
+                    Archived = createRequest.Archived
+                };
+                dbContext.Departments.Add(newDepartment);
+
+                //-------------------------------------
+
+                var parentDepartment = await dbContext.Departments
+                .FirstOrDefaultAsync(o => o.Id.ToString() == createRequest.ParentDepartmentId);
+
+                //EDIT
+                /*if (parentDepartment != null && parentDepartment.Id == newDepartment.Id)
+                {
+                    return BadRequest("Nadradené oddelenie nesmie byť rovnaké ako vkladané");
+                }*/
+
+                if (parentDepartment != null)
+                {
+                    newDepartment.ParentDepartment = parentDepartment;
+                }
+                await dbContext.SaveChangesAsync();
+
+                //-------------------------------------
+
+                if (createRequest.ChildDepartments != null && createRequest.ChildDepartments.Any())
+                {
+                    foreach (var childDepartmentId in createRequest.ChildDepartments)
+                    {
+                        var childDepartment = await dbContext.Departments
+                            .FirstOrDefaultAsync(d => d.Id.ToString() == childDepartmentId);
+
+                        if (childDepartment != null)
+                        {
+                                if (await IsAncestorAsync(childDepartment.Id, newDepartment.Id))
+                                {
+                                    return BadRequest("Cannot set a department as its own ancestor.");
+                                }
+                                childDepartment.ParentDepartment = newDepartment;
+                                dbContext.Departments.Update(childDepartment);
+                            
+                        }
+                    }
+                    await dbContext.SaveChangesAsync();
+                }
+
+                //----------------------------------
+                await dbContext.SaveChangesAsync();
+
+                return Ok();
+            }
+
+            catch (Exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    "Error creating new employee record");
+            }
         }
+
+        private async Task<bool> IsAncestorAsync(Guid childId, Guid ancestorId)
+        {
+            var childDepartment = await dbContext.Departments
+                .Include(d => d.ParentDepartment)
+                .FirstOrDefaultAsync(d => d.Id == childId);
+            var createdDepartment = await dbContext.Departments
+                .FirstOrDefaultAsync(d => d.Id == ancestorId);
+            var otec = createdDepartment.ParentDepartment;
+            while (otec != null)
+            {
+                if (otec.Id == childDepartment.Id)
+                {
+                    return true;
+                }
+
+                otec = otec.ParentDepartment;
+            }
+
+            return false; 
+        }
+       
 
         [HttpGet("{departmentId}")]
         [Authorize]
@@ -137,10 +236,14 @@ namespace AGILE2024_BE.Controllers
                 return NotFound(new { message = "Department not found" });
             }
 
-            bool hasRelatedEntities = await dbContext.EmployeeCards 
+            
+            bool isReferencedInEmployeeCard = await dbContext.EmployeeCards 
                                .AnyAsync(e => e.Department.Id == departmentId);
 
-            if (hasRelatedEntities)
+            bool isReferencedInDepartment = await dbContext.Departments
+                               .AnyAsync(e => e.ParentDepartment.Id == departmentId);
+
+            if (isReferencedInEmployeeCard || isReferencedInDepartment)
             {
                 return BadRequest(new { message = "Cannot delete department as it is referenced in other records." });
             }
