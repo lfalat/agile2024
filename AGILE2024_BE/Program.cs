@@ -47,7 +47,6 @@ namespace AGILE2024_BE.API
         private static void AddServices(WebApplicationBuilder webAppBuilder)
         {
             var webAppConfig = webAppBuilder.Configuration;
-
             webAppBuilder.Services.AddEndpointsApiExplorer();
             webAppBuilder.Services.AddSwaggerGen();
             webAppBuilder.Services.AddAntiforgery();
@@ -58,6 +57,7 @@ namespace AGILE2024_BE.API
             {
                 var connectionString = webAppConfig.GetConnectionString("Azure_MySql");
                 options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
+                //options.UseLazyLoadingProxies();
             });
 
             webAppBuilder.Services.AddIdentity<ExtendedIdentityUser, IdentityRole>(o =>

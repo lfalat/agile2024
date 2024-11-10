@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace AGILE2024_BE.Models
 {
@@ -9,7 +10,7 @@ namespace AGILE2024_BE.Models
 
         [InverseProperty("Organization")]
         public ICollection<Department> RelatedDepartments { get; } = [];
-
+        [JsonIgnore]
         public ICollection<JobPosition> JobPositions { get; set; } = [];
 
         [ForeignKey(nameof(Location) + "Id")]
