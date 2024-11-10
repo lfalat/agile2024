@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace AGILE2024_BE.Controllers
 {
@@ -23,6 +24,15 @@ namespace AGILE2024_BE.Controllers
             this.config = co;
             this.roleManager = rm;
             this.dbContext = db;
+        }
+
+        [HttpGet("Locations")]
+        [Authorize(Roles = RolesDef.Spravca)]
+        public async Task<IActionResult> Roles()
+        {
+            var locations = await dbContext.Locations.ToListAsync();
+
+            return Ok(locations);
         }
     }
 }
