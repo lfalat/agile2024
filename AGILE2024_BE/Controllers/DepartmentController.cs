@@ -92,96 +92,7 @@ namespace AGILE2024_BE.Controllers
         [Authorize(Roles = RolesDef.Spravca)]
         public async Task<IActionResult> Create([FromBody] CreateDepartmentRequest createRequest)
         {
-            /*try
-            {
-                if (createRequest == null)
-                {
-                    return BadRequest("Invalid data.");
-                }
-                
-                var organization = await dbContext.Organizations
-                .FirstOrDefaultAsync(o => o.Id.ToString() == createRequest.Organization);
-
-                if (organization == null && createRequest.Organization != null)
-                {
-                    return BadRequest($"Organization with name {createRequest.Organization} does not exist.");
-                }       
-
-                var newDepartment = new Department
-                {
-                    Id = Guid.NewGuid(),
-                    Name = createRequest.Name,
-                    Code = createRequest.Code,
-                    Organization = organization,
-                    Archived = createRequest.Archived
-                };
-                dbContext.Departments.Add(newDepartment);
-                if (createRequest.Created != null) {
-                    newDepartment.Created = createRequest.Created;
-                }
-
-                //-------------------------------------
-
-                var parentDepartment = await dbContext.Departments
-                .FirstOrDefaultAsync(o => o.Id.ToString() == createRequest.ParentDepartmentId);
-
-                
-                if (parentDepartment != null && parentDepartment.Id == newDepartment.Id)
-                {
-                    return BadRequest("Nadradené oddelenie nesmie byť rovnaké ako vkladané");
-                }
-
-
-
-                if (parentDepartment != null)
-                {
-                    newDepartment.ParentDepartment = parentDepartment;
-                }
-                await dbContext.SaveChangesAsync();
-
-                //-------------------------------------
-
-                if (createRequest.ChildDepartments != null && createRequest.ChildDepartments.Any())
-                {
-                    foreach (var childDepartmentId in createRequest.ChildDepartments)
-                    {
-                        var childDepartment = await dbContext.Departments
-                            .FirstOrDefaultAsync(d => d.Id.ToString() == childDepartmentId);
-
-                        if (childDepartment != null)
-
-                            if (childDepartment.Id == newDepartment.Id)
-                            {
-                                return BadRequest("Oddelenie niemôže byť podradené sebe samému");
-                            }
-                        {
-                                if (await IsAncestorAsync(childDepartment.Id, newDepartment.Id))
-                                {
-                                    dbContext.Departments.Remove(newDepartment);
-                                    return BadRequest("Cannot set a department as its own ancestor.");
-                                }
-                                childDepartment.ParentDepartment = newDepartment;
-                                dbContext.Departments.Update(childDepartment);
-                            
-                        }
-                    }
-                    await dbContext.SaveChangesAsync();
-                }
-
-                //----------------------------------
-                await dbContext.SaveChangesAsync();
-
-                return Ok();
-            }
-
-            catch (Exception)
-
-
-            {
-
-                return StatusCode(StatusCodes.Status500InternalServerError,
-                    "Error creating new employee record");
-            }*/
+            
             using (var transaction = await dbContext.Database.BeginTransactionAsync())
             {
                 try
@@ -191,13 +102,12 @@ namespace AGILE2024_BE.Controllers
                         return BadRequest("Invalid data.");
                     }
 
-                    // Fetch the organization
                     var organization = await dbContext.Organizations
                         .FirstOrDefaultAsync(o => o.Id.ToString() == createRequest.Organization);
 
                     if (organization == null && createRequest.Organization != null)
                     {
-                        return BadRequest($"Organization with name {createRequest.Organization} does not exist.");
+                        return BadRequest($"Organizacia {createRequest.Organization} nexistuje.");
                     }
 
                     var newDepartment = new Department
@@ -210,35 +120,30 @@ namespace AGILE2024_BE.Controllers
                     };
                     dbContext.Departments.Add(newDepartment);
 
-                    // Set the created date if provided
                     if (createRequest.Created != null)
                     {
                         newDepartment.Created = createRequest.Created;
                     }
 
-                    // Fetch the parent department and validate it
                     var parentDepartment = await dbContext.Departments
                         .FirstOrDefaultAsync(o => o.Id.ToString() == createRequest.ParentDepartmentId);
 
                     if (parentDepartment != null && parentDepartment.Id == newDepartment.Id)
                     {
-                        return BadRequest("Parent department cannot be the same as the department being created.");
+                        return BadRequest("Nadradené oddelenie nemôže byť rovnaké ako vytvárané");
                     }
 
-                    // Check for cycle before assigning parent department
                     if (parentDepartment != null)
                     {
                         if (await IsCycleAsync(parentDepartment, newDepartment))
                         {
-                            return BadRequest("Cannot assign a department as its own ancestor.");
+                            return BadRequest("Nie je možné priradiť kvôli cyklu.");
                         }
                         newDepartment.ParentDepartment = parentDepartment;
                     }
 
-                    // Save new department and parent-child relationships
                     await dbContext.SaveChangesAsync();
 
-                    // Handle child departments
                     if (createRequest.ChildDepartments != null && createRequest.ChildDepartments.Any())
                     {
                         foreach (var childDepartmentId in createRequest.ChildDepartments)
@@ -250,13 +155,12 @@ namespace AGILE2024_BE.Controllers
                             {
                                 if (childDepartment.Id == newDepartment.Id)
                                 {
-                                    return BadRequest("Department cannot be its own child.");
+                                    return BadRequest("Podradené oddelenie nemôže byť rovnaké ako vytvárané");
                                 }
 
-                                // Check if assigning this as a parent would create a cycle
                                 if (await IsCycleAsync(newDepartment, childDepartment))
                                 {
-                                    return BadRequest("Cannot assign a department as its own ancestor.");
+                                    return BadRequest("Nie je možné priradiť kvôli cyklu.");
                                 }
 
                                 childDepartment.ParentDepartment = newDepartment;
@@ -352,7 +256,7 @@ namespace AGILE2024_BE.Controllers
 
                 if (existingDepartment == null)
                 {
-                    return NotFound("Department not found.");
+                    return NotFound("Oddelenie sa nenašlo");
                 }
 
                 var organization = await dbContext.Organizations
@@ -360,7 +264,7 @@ namespace AGILE2024_BE.Controllers
 
                 if (organization == null && editRequest.Organization != null)
                 {
-                    return BadRequest($"Organization with name {editRequest.Organization} does not exist.");
+                    return BadRequest($"Organizácia {editRequest.Organization} neexistuje.");
                 }
 
                 existingDepartment.Name = editRequest.Name;
@@ -429,7 +333,7 @@ namespace AGILE2024_BE.Controllers
 
                     foreach (var childDepartment in currentChildDepartments)
                     {
-                        childDepartment.ParentDepartment = null;  // Remove the parent reference
+                        childDepartment.ParentDepartment = null;
                         dbContext.Departments.Update(childDepartment);
                     }
                 }
