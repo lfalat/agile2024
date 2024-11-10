@@ -3,6 +3,7 @@ using AGILE2024_BE.Models.Identity;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace AGILE2024_BE.Controllers
 {
@@ -21,6 +22,14 @@ namespace AGILE2024_BE.Controllers
             this.config = co;
             this.roleManager = rm;
             this.dbContext = db;
+        }
+
+        [HttpGet("GetUnarchaved")]
+        public async Task<IActionResult> GetUnarchaved()
+        {
+            var organizations = dbContext.Organizations.Where( x => x.Archived == false ).ToList();
+
+            return Ok(organizations);
         }
     }
 }

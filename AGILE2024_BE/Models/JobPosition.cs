@@ -8,9 +8,8 @@ namespace AGILE2024_BE.Models
         public Guid Id { get; set; }
 
         [InverseProperty("JobPosition")]
-        public ICollection<Level> Levels { get; } = [];
-
-        public ICollection<Organization> Organizations { get; } = [];
+        public virtual List<Level> Levels { get; set; } = new List<Level>();
+        public virtual List<Organization> Organizations { get; set; } = new List<Organization>();
 
         public required string Name { get; set; }
         public required string Code { get; set; }

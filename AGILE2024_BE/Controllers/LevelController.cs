@@ -22,5 +22,12 @@ namespace AGILE2024_BE.Controllers
             this.roleManager = rm;
             this.dbContext = db;
         }
+
+        [HttpGet("Get")]
+        public async Task<IActionResult> Get(Guid jobPostionID)
+        {
+            var levels = dbContext.Levels.Where( x => x.JobPosition.Id == jobPostionID ).ToList();
+            return Ok(levels);
+        }
     }
 }
