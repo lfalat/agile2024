@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -34,21 +35,34 @@ namespace AGILE2024_BE.Controllers
         [Authorize(Roles = RolesDef.Spravca)]
         public async Task<IActionResult> Organizations()
         {
-            var organizations = await dbContext.Organizations.ToListAsync();
+            try
+            {
+                var organizations = await dbContext.Organizations.ToListAsync();
 
-            return Ok(organizations);
+                if (organizations == null || organizations.Count == 0)
+                {
+                    return NoContent();
+                }
+
+                return Ok(organizations);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "Došlo k internej chybe pri načítavaní organizácií.");
+            }
         }
 
         [HttpPut("Archive")]
         [Authorize(Roles = RolesDef.Spravca)]
         public async Task<IActionResult> Archive([FromBody] ArchiveOrganizationRequest archiveRequest)
         {
-            if (!ModelState.IsValid) return BadRequest();
+            if (!ModelState.IsValid) return BadRequest("Nesprávny vstup.");
+
             var organization = await dbContext.Organizations.FirstOrDefaultAsync(x => x.Id == archiveRequest.Id);
 
             if (organization == null)
             {
-                return NotFound("Organization not found");
+                return NotFound("Organizácia nebola nájdená.");
             }
 
             if (organization.Archived == archiveRequest.Archive)
@@ -60,30 +74,99 @@ namespace AGILE2024_BE.Controllers
             organization.LastEdited = DateTime.Now;
             dbContext.Organizations.Update(organization);
             await dbContext.SaveChangesAsync();
+
             if (organization.Archived)
             {
-                return Ok("Organization has been archived");
+                return Ok("Organizácia bola archivovaná.");
             }
             else
             {
-                return Ok("Organization has been unarchived");
+                return Ok("Organizácia bola zarchivovaná.");
             }
+        }
+
+        [HttpGet("{id}")]
+        [Authorize(Roles = RolesDef.Spravca)]
+        public async Task<IActionResult> Organization(Guid id)
+        {
+            if (id == Guid.Empty)
+            {
+                return BadRequest("Neplatná organizácia.");
+            }
+
+            try
+            {
+                var organization = await dbContext.Organizations
+                    .Include(o => o.Location)
+                    .FirstOrDefaultAsync(x => x.Id == id);
+
+                if (organization == null)
+                {
+                    return NotFound("Organizácia nebola nájdená.");
+                }
+
+                return Ok(organization);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "Došlo k internej chybe pri načítavaní organizácie.");
+            }
+        }
+
+        [HttpPut("Update/{id}")]
+        [Authorize(Roles = RolesDef.Spravca)]
+        public async Task<IActionResult> Update(Guid id, [FromBody] RegisterOrganizationRequest registerOrganizationRequest)
+        {
+            if (registerOrganizationRequest == null)
+            {
+                return BadRequest("Neplatné dáta.");
+            }
+
+            var organization = await dbContext.Organizations.FirstOrDefaultAsync(x => x.Id == id);
+            if (organization == null)
+            {
+                return NotFound($"Organizácia s ID {id} nebola nájdená.");
+            }
+
+            var location = await dbContext.Locations.FirstOrDefaultAsync(loc => loc.Id.ToString() == registerOrganizationRequest.Location);
+            if (location == null)
+            {
+                return NotFound($"Lokalita s ID {registerOrganizationRequest.Location} nebola nájdená.");
+            }
+
+            organization.Code = registerOrganizationRequest.Code;
+            organization.Name = registerOrganizationRequest.Name;
+            organization.LastEdited = DateTime.Now;
+            organization.Location = location;
+
+            dbContext.Update(organization);
+
+            try
+            {
+                await dbContext.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "Došlo k internej chybe pri uložení organizácie.");
+            }
+
+            return Ok(organization);
         }
 
         [HttpPost("Delete")]
         [Authorize(Roles = RolesDef.Spravca)]
-        public async Task<IActionResult> Archive([FromBody] Guid selectedId)
+        public async Task<IActionResult> Delete([FromBody] Guid selectedId)
         {
             if (selectedId == Guid.Empty)
             {
-                return BadRequest("Invalid ID.");
+                return BadRequest("Neplatná organizácia.");
             }
 
             var organization = await dbContext.Organizations.FirstOrDefaultAsync(x => x.Id == selectedId);
 
             if (organization == null)
             {
-                return NotFound("Organization not found.");
+                return NotFound("Organizácia nebola nájdená.");
             }
 
             var departments = await dbContext.Departments.Where(x => x.Organization.Id == selectedId).ToListAsync();
@@ -95,37 +178,34 @@ namespace AGILE2024_BE.Controllers
             dbContext.Organizations.Remove(organization);
             await dbContext.SaveChangesAsync();
 
-            return Ok("Organization deleted.");
+            return Ok("Organizácia bola vymazaná.");
         }
-
 
         [HttpPost("Register")]
         [Authorize(Roles = RolesDef.Spravca)]
         public async Task<IActionResult> Register([FromBody] RegisterOrganizationRequest registerRequest)
         {
-            // Validate Name and Code
             if (string.IsNullOrWhiteSpace(registerRequest.Name) || string.IsNullOrWhiteSpace(registerRequest.Code))
             {
-                return BadRequest("Both Name and Code are required.");
+                return BadRequest("Názov a kód sú povinné.");
             }
 
-            // Validate Location
-            if (registerRequest.Location.IsNullOrEmpty())
+            if (string.IsNullOrEmpty(registerRequest.Location))
             {
-                return BadRequest("Location is required.");
+                return BadRequest("Lokalita je povinná.");
             }
 
-            var location = dbContext.Locations.FirstOrDefaultAsync(loc => loc.Id.ToString() == registerRequest.Location);
+            var location = await dbContext.Locations.FirstOrDefaultAsync(loc => loc.Id.ToString() == registerRequest.Location);
             if (location == null)
             {
-                return BadRequest("Location invalid id");
+                return BadRequest("Neplatné ID lokality.");
             }
 
             Organization organization = new Organization
             {
                 Name = registerRequest.Name,
                 Code = registerRequest.Code,
-                Location = location.Result,
+                Location = location,
                 Created = DateTime.Now,
                 LastEdited = DateTime.Now,
                 Archived = false
@@ -133,20 +213,15 @@ namespace AGILE2024_BE.Controllers
 
             try
             {
-                // Add the organization to the database context
                 await dbContext.Organizations.AddAsync(organization);
-
-                // Save the changes to the database
                 await dbContext.SaveChangesAsync();
 
-                // Return a success response, including the ID of the new organization
-                return Ok(new { Message = "Organization registered successfully.", OrganizationId = organization.Id });
+                return Ok(new { Message = "Organizácia bola úspešne zaregistrovaná.", OrganizationId = organization.Id });
             }
             catch (Exception ex)
             {
-                //skurvilo sa to
-                Console.Error.WriteLine($"Error while registering organization: {ex.Message}");
-                return StatusCode(500, "An error occurred while registering the organization.");
+                Console.Error.WriteLine($"Chyba pri registrácii organizácie: {ex.Message}");
+                return StatusCode(500, "Došlo k chybe pri registrácii organizácie.");
             }
         }
     }
