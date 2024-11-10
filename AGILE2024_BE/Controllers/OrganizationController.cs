@@ -27,15 +27,16 @@ namespace AGILE2024_BE.Controllers
             this.dbContext = db;
         }
 
-        [HttpGet("Organizations")]
+        [HttpGet("UnarchivedOrganizations")]
         [Authorize(Roles = RolesDef.Spravca)]
-        public async Task<IActionResult> Organizations()
+        public async Task<IActionResult> UnarchivedOrganizations()
         {
             var organizations = await dbContext.Organizations
-        .Include(o => o.RelatedDepartments)
-        .Include(o => o.JobPositions)
-        .Include(o => o.Location)
-        .ToListAsync();
+            .Include(o => o.RelatedDepartments)
+            .Include(o => o.JobPositions)
+            .Include(o => o.Location)
+            .Where(o => !o.Archived)
+            .ToListAsync();
 
             var organizationsResponse = new List<OrganizationResponse>();
 
