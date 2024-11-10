@@ -17,6 +17,7 @@
         public bool Archived { get; set; }
         public string? ParentDepartmentId { get; set; }
         public List<string>? ChildDepartments { get; set; }
+        public List<string>? ChildDepartmentsId { get; set; }
 
     }
 }

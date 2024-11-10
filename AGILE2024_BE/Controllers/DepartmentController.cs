@@ -398,9 +398,9 @@ namespace AGILE2024_BE.Controllers
                     }
                 }
 
-                if (editRequest.ChildDepartments != null && editRequest.ChildDepartments.Any())
+                if (editRequest.ChildDepartmentsId != null && editRequest.ChildDepartmentsId.Any())
                 {
-                    foreach (var childDepartmentId in editRequest.ChildDepartments)
+                    foreach (var childDepartmentId in editRequest.ChildDepartmentsId)
                     {
                         var childDepartment = await dbContext.Departments
                             .FirstOrDefaultAsync(d => d.Id.ToString() == childDepartmentId);
