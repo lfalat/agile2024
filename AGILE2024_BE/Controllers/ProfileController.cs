@@ -114,6 +114,7 @@ namespace AGILE2024_BE.Controllers
         }
 
         [HttpPost("UploadPicture/{userId}")]
+        [Authorize]
         public async Task<IActionResult> UploadPicture(Guid userId, [FromForm]UploadPictureRequest req)
         {
             var user = await userManager.FindByIdAsync(userId.ToString());
