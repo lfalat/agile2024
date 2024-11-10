@@ -14,8 +14,8 @@ namespace AGILE2024_BE.Models
         public double? Latitude { get; set; }
         //dlžka
         public double? Longitude { get; set; }
-        public required DateTime LastEdited { get; set; } = DateTime.Now;
-        public required DateTime Created { get; set; } = DateTime.Now;
-        public required bool Archived { get; set; } = false;
+        public DateTime LastEdited { get; set; } = DateTime.Now;
+        public DateTime Created { get; set; } = DateTime.Now;
+        public bool Archived { get; set; } = false;
     }
 }
