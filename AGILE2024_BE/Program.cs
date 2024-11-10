@@ -57,7 +57,6 @@ namespace AGILE2024_BE.API
             webAppBuilder.Services.AddDbContext<AgileDBContext>(options =>
             {
                 var connectionString = webAppConfig.GetConnectionString("Azure_MySql");
-                options.UseLazyLoadingProxies();
                 options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
             });
 
