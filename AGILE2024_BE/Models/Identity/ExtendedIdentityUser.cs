@@ -11,6 +11,8 @@ namespace AGILE2024_BE.Models.Identity
         public string? RefreshToken { get; set; }
         public DateTime? RefreshTokenExpiry { get; set; }
         public required string Name { get; set; }
+
+        public string? MiddleName { get; set; }
         public required string Surname { get; set; }
         public string? Title_after { get; set; }
         public string? Title_before { get; set; }

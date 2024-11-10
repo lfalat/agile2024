@@ -1,6 +1,7 @@
 ﻿using AGILE2024_BE.Data;
 using AGILE2024_BE.Models;
 using AGILE2024_BE.Models.Identity;
+using AGILE2024_BE.Models.Response;
 using AGILE2024_BE.Models.Requests;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -28,6 +29,37 @@ namespace AGILE2024_BE.Controllers
             this.dbContext = db;
         }
 
+        [HttpGet("UnarchivedOrganizations")]
+        [Authorize(Roles = RolesDef.Spravca)]
+        public async Task<IActionResult> UnarchivedOrganizations()
+        {
+            var organizations = await dbContext.Organizations
+            .Include(o => o.RelatedDepartments)
+            .Include(o => o.JobPositions)
+            .Include(o => o.Location)
+            .Where(o => !o.Archived)
+            .ToListAsync();
+
+            var organizationsResponse = new List<OrganizationResponse>();
+
+            foreach (var organization in organizations)
+            {
+                organizationsResponse.Add(new OrganizationResponse
+                {
+                    Id = organization.Id,
+                    Name = organization.Name,
+                    Code = organization.Code,
+                    LastEdited = organization.LastEdited,
+                    Created = organization.Created,
+                    Archived = organization.Archived,
+                    LocationName = organization.Location?.Name
+
+                });
+            }
+
+            return Ok(organizationsResponse);
+        }
+        
         [HttpPost("Register")]
         [Authorize(Roles = RolesDef.Spravca)]
         public async Task<IActionResult> Register([FromBody] RegisterOrganizationRequest registerRequest)
