@@ -44,7 +44,8 @@ namespace AGILE2024_BE.Controllers
                 LastName = user.Surname ?? string.Empty,
                 TitleBefore = user.Title_before ?? string.Empty,
                 TitleAfter = user.Title_after ?? string.Empty,
-                Role = roles.FirstOrDefault()
+                Role = roles.FirstOrDefault(),
+                ProfilePicLink = user.ProfilePicLink
             };
 
             return Ok(userIdentityResponse);

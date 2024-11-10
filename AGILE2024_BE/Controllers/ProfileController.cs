@@ -2,7 +2,11 @@
 using AGILE2024_BE.Models;
 using AGILE2024_BE.Models.Identity;
 using AGILE2024_BE.Models.Requests;
+using AGILE2024_BE.Models.Requests.User;
 using AGILE2024_BE.Models.Response;
+using Azure.Identity;
+using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Specialized;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
@@ -107,6 +111,21 @@ namespace AGILE2024_BE.Controllers
             {
                 return BadRequest(new { message = "Nastala chyba pri aktualizácii používateľských údajov." });
             }
+        }
+
+        [HttpPost("UploadPicture/{userId}")]
+        public async Task<IActionResult> UploadPicture(Guid userId, [FromForm]UploadPictureRequest req)
+        {
+            var user = await userManager.FindByIdAsync(userId.ToString());
+            BlobServiceClient client = new(config.GetSection("Blob")["connectionString"]);
+            var containerClient = client.GetBlobContainerClient("images");
+            var blobClient = containerClient.GetBlobClient($"{Guid.NewGuid().ToString()}.{req.file.FileName.Split('.').Last()}");
+            await blobClient.UploadAsync(req.file.OpenReadStream(), true);
+            
+            user.ProfilePicLink = blobClient.Uri.ToString();
+            await userManager.UpdateAsync(user);
+
+            return Ok();
         }
 
 
