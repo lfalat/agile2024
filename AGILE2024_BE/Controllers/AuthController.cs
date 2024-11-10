@@ -56,59 +56,5 @@ namespace AGILE2024_BE.Controllers
 
             return Ok(refreshResponse);
         }
-
-        [HttpPost("Login")]
-        public async Task<IActionResult> Login([FromBody] LoginUserRequest loginRequest)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest();
-            }
-
-            ExtendedIdentityUser? user = await userManager.FindByEmailAsync(loginRequest.Email);
-
-            if (user == null || !(await userManager.CheckPasswordAsync(user, loginRequest.Password)))
-            {
-                return NotFound("Zadali ste nesprávne údaje!");
-            }
-
-            LoginResponse loginResponse = new LoginResponse()
-            {
-                NewJwtToken = await Auth.GenerateJWT(user, userManager, config),
-                NewRefreshToken = Auth.GenerateRT()
-            };
-
-            user.RefreshToken = loginResponse.NewRefreshToken;
-            user.RefreshTokenExpiry = DateTime.Now.AddMinutes(30);
-            await userManager.UpdateAsync(user);
-
-            return Ok(loginResponse);
-        }
-
-        [HttpPost("Register")]
-        [Authorize(Roles = RolesDef.Spravca)]
-        public async Task<IActionResult> Register([FromBody] RegisterUserRequest registerRequest)
-        {
-            ExtendedIdentityUser newUser = new ExtendedIdentityUser()
-            {
-                UserName = registerRequest.Email,
-                Email = registerRequest.Email,
-                Name = registerRequest.Name,
-                Surname = registerRequest.Surname,
-                Title_before = registerRequest.Title_Before,
-                Title_after = registerRequest.Title_After
-            };
-
-            var result = await userManager.CreateAsync(newUser, registerRequest.Password);
-
-            if (!result.Succeeded)
-            {
-                return BadRequest(result.Errors);
-            }
-
-            await userManager.AddToRoleAsync(newUser, registerRequest.Role);
-
-            return Ok();
-        }
     }
 }
