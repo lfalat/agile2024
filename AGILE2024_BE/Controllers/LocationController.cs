@@ -31,13 +31,6 @@ namespace AGILE2024_BE.Controllers
             this.roleManager = rm;
             this.dbContext = db;
         }
-        
-        public async Task<IActionResult> Roles()
-        {
-            var locations = await dbContext.Locations.ToListAsync();
-
-            return Ok(locations);
-        }
 
         [HttpGet("Locations")]
         [Authorize(Roles = RolesDef.Spravca)]

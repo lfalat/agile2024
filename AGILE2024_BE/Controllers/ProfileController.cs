@@ -75,7 +75,7 @@ namespace AGILE2024_BE.Controllers
                 EmploymentDuration = employeeCard.StartWorkDate.HasValue
             ? GetEmploymentDuration(employeeCard.StartWorkDate.Value, DateTime.Now)
             : "Neznáma doba zamestnania",
-                MiddleName = employeeCard.User?.MiddleName
+                MiddleName = employeeCard.User.MiddleName
             };
 
             return Ok(employeeCardResponse);
