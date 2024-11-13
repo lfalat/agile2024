@@ -87,7 +87,9 @@ namespace AGILE2024_BE.Controllers
                 Code = createRequest.Code,
                 City = createRequest.City,
                 ZipCode = createRequest.ZipCode,
-                
+                //TODO: Doplnit adresu
+                Adress = ""
+
             };
 
             if (createRequest.Latitude != 0 ) {

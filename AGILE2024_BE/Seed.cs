@@ -17,6 +17,57 @@ namespace AGILE2024_BE
 
             if (_roleManager != null && _userManager != null)
             {
+                //Seed FeedbackRequestStatuses
+                var feedbackRequestStatuses = new List<FeedbackRequestStatus>
+                {
+                    new FeedbackRequestStatus { description = "Vyplnený" },
+                    new FeedbackRequestStatus { description = "Zamietnutý" },
+                    new FeedbackRequestStatus { description = "Nevyplnený" }
+                };
+                foreach (var feedbackRequestStatus in feedbackRequestStatuses)
+                {
+                    var existingContractType = await context.ContractTypes
+                        .FirstOrDefaultAsync(ct => ct.Name == feedbackRequestStatus.description);
+
+                    if (existingContractType == null)
+                    {
+                        await context.FeedbackRequestStatuses.AddAsync(feedbackRequestStatus);
+                    }
+                }
+                // Seed GoalStatuses
+                var goalStatuses = new List<GoalStatus>
+                {
+                    new GoalStatus { description = "Nezačatý" },
+                    new GoalStatus { description = "Prebiehajúci" },
+                    new GoalStatus { description = "Dokončený" },
+                    new GoalStatus { description = "Zrušený" }
+                };
+                foreach (var goalStatus in goalStatuses)
+                {
+                    var existingContractType = await context.ContractTypes
+                        .FirstOrDefaultAsync(ct => ct.Name == goalStatus.description);
+
+                    if (existingContractType == null)
+                    {
+                        await context.GoalStatuses.AddAsync(goalStatus);
+                    }
+                }
+                //Seed GoalCategory
+                var goalCategories = new List<GoalCategory>
+                {
+                    new GoalCategory { description = "Výkonostný rozvoj" },
+                    new GoalCategory { description = "Osobný rozvoj" }
+                };
+                foreach (var goalCategory in goalCategories)
+                {
+                    var existingContractType = await context.ContractTypes
+                        .FirstOrDefaultAsync(ct => ct.Name == goalCategory.description);
+
+                    if (existingContractType == null)
+                    {
+                        await context.GoalCategories.AddAsync(goalCategory);
+                    }
+                }
                 // Seed contract types
                 var contractTypes = new List<ContractType>
                 {

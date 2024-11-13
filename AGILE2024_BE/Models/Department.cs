@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+﻿using AGILE2024_BE.Models.Response;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AGILE2024_BE.Models
 {
@@ -9,7 +10,8 @@ namespace AGILE2024_BE.Models
 
         [ForeignKey(nameof(Organization) + "Id")]
         public required Organization? Organization { get; set; }
-
+        [ForeignKey(nameof(UserIdentityResponse) + "Id")]
+        public required UserIdentityResponse Superior { get; set; }
         [ForeignKey(nameof(ParentDepartment) + "Id")]
         public Department? ParentDepartment { get; set; }
 

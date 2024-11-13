@@ -4,6 +4,7 @@ using AGILE2024_BE.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AGILE2024_BE.Migrations
 {
     [DbContext(typeof(AgileDBContext))]
-    partial class AgileDBContextModelSnapshot : ModelSnapshot
+    [Migration("20241113202148_Sprint3_v2")]
+    partial class Sprint3_v2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -33,7 +36,7 @@ namespace AGILE2024_BE.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ContractTypes", (string)null);
+                    b.ToTable("ContractTypes");
                 });
 
             modelBuilder.Entity("AGILE2024_BE.Models.Department", b =>
@@ -76,7 +79,7 @@ namespace AGILE2024_BE.Migrations
 
                     b.HasIndex("UserIdentityResponseId");
 
-                    b.ToTable("Departments", (string)null);
+                    b.ToTable("Departments");
                 });
 
             modelBuilder.Entity("AGILE2024_BE.Models.EmployeeCard", b =>
@@ -131,7 +134,7 @@ namespace AGILE2024_BE.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("EmployeeCards", (string)null);
+                    b.ToTable("EmployeeCards");
                 });
 
             modelBuilder.Entity("AGILE2024_BE.Models.FeedbackAnswer", b =>
@@ -154,7 +157,7 @@ namespace AGILE2024_BE.Migrations
 
                     b.HasIndex("FeedbackQuestionId");
 
-                    b.ToTable("FeedbackAnswers", (string)null);
+                    b.ToTable("FeedbackAnswers");
                 });
 
             modelBuilder.Entity("AGILE2024_BE.Models.FeedbackQuestion", b =>
@@ -177,7 +180,7 @@ namespace AGILE2024_BE.Migrations
 
                     b.HasIndex("FeedbackRequestId");
 
-                    b.ToTable("FeedbackQuestions", (string)null);
+                    b.ToTable("FeedbackQuestions");
                 });
 
             modelBuilder.Entity("AGILE2024_BE.Models.FeedbackRecipient", b =>
@@ -204,7 +207,7 @@ namespace AGILE2024_BE.Migrations
 
                     b.HasIndex("FeedbackRequestId");
 
-                    b.ToTable("FeedbackRecipients", (string)null);
+                    b.ToTable("FeedbackRecipients");
                 });
 
             modelBuilder.Entity("AGILE2024_BE.Models.FeedbackRequest", b =>
@@ -235,7 +238,7 @@ namespace AGILE2024_BE.Migrations
 
                     b.HasIndex("FeedbackRequestStatusId");
 
-                    b.ToTable("FeedbackRequests", (string)null);
+                    b.ToTable("FeedbackRequests");
                 });
 
             modelBuilder.Entity("AGILE2024_BE.Models.FeedbackRequestStatus", b =>
@@ -250,7 +253,7 @@ namespace AGILE2024_BE.Migrations
 
                     b.HasKey("id");
 
-                    b.ToTable("FeedbackRequestStatuses", (string)null);
+                    b.ToTable("FeedbackRequestStatuses");
                 });
 
             modelBuilder.Entity("AGILE2024_BE.Models.Goal", b =>
@@ -293,7 +296,7 @@ namespace AGILE2024_BE.Migrations
 
                     b.HasIndex("GoalStatusId");
 
-                    b.ToTable("Goals", (string)null);
+                    b.ToTable("Goals");
                 });
 
             modelBuilder.Entity("AGILE2024_BE.Models.GoalAssignment", b =>
@@ -314,7 +317,7 @@ namespace AGILE2024_BE.Migrations
 
                     b.HasIndex("GoalId");
 
-                    b.ToTable("GoalAssignments", (string)null);
+                    b.ToTable("GoalAssignments");
                 });
 
             modelBuilder.Entity("AGILE2024_BE.Models.GoalCategory", b =>
@@ -329,7 +332,7 @@ namespace AGILE2024_BE.Migrations
 
                     b.HasKey("id");
 
-                    b.ToTable("GoalCategory", (string)null);
+                    b.ToTable("GoalCategory");
                 });
 
             modelBuilder.Entity("AGILE2024_BE.Models.GoalStatus", b =>
@@ -344,7 +347,7 @@ namespace AGILE2024_BE.Migrations
 
                     b.HasKey("id");
 
-                    b.ToTable("GoalStatuses", (string)null);
+                    b.ToTable("GoalStatuses");
                 });
 
             modelBuilder.Entity("AGILE2024_BE.Models.Identity.ExtendedIdentityUser", b =>
@@ -467,7 +470,7 @@ namespace AGILE2024_BE.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("JobPositions", (string)null);
+                    b.ToTable("JobPositions");
                 });
 
             modelBuilder.Entity("AGILE2024_BE.Models.Level", b =>
@@ -486,7 +489,7 @@ namespace AGILE2024_BE.Migrations
 
                     b.HasIndex("JobPositionId");
 
-                    b.ToTable("Levels", (string)null);
+                    b.ToTable("Levels");
                 });
 
             modelBuilder.Entity("AGILE2024_BE.Models.Location", b =>
@@ -532,7 +535,7 @@ namespace AGILE2024_BE.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Locations", (string)null);
+                    b.ToTable("Locations");
                 });
 
             modelBuilder.Entity("AGILE2024_BE.Models.Organization", b =>
@@ -565,7 +568,7 @@ namespace AGILE2024_BE.Migrations
 
                     b.HasIndex("LocationId");
 
-                    b.ToTable("Organizations", (string)null);
+                    b.ToTable("Organizations");
                 });
 
             modelBuilder.Entity("AGILE2024_BE.Models.Response.UserIdentityResponse", b =>
@@ -597,7 +600,7 @@ namespace AGILE2024_BE.Migrations
 
                     b.HasKey("id");
 
-                    b.ToTable("UserIdentityResponse", (string)null);
+                    b.ToTable("UserIdentityResponse");
                 });
 
             modelBuilder.Entity("AGILE2024_BE.Models.Review", b =>
@@ -628,7 +631,7 @@ namespace AGILE2024_BE.Migrations
 
                     b.HasIndex("EmployeeCardId");
 
-                    b.ToTable("Reviews", (string)null);
+                    b.ToTable("Reviews");
                 });
 
             modelBuilder.Entity("AGILE2024_BE.Models.ReviewQuestion", b =>
@@ -650,7 +653,7 @@ namespace AGILE2024_BE.Migrations
 
                     b.HasIndex("ReviewRecipientId");
 
-                    b.ToTable("ReviewQuestions", (string)null);
+                    b.ToTable("ReviewQuestions");
                 });
 
             modelBuilder.Entity("AGILE2024_BE.Models.ReviewRecipient", b =>
@@ -672,7 +675,7 @@ namespace AGILE2024_BE.Migrations
 
                     b.HasIndex("GoalAssignmentId");
 
-                    b.ToTable("ReviewRecipents", (string)null);
+                    b.ToTable("ReviewRecipents");
                 });
 
             modelBuilder.Entity("JobPositionOrganization", b =>
@@ -687,7 +690,7 @@ namespace AGILE2024_BE.Migrations
 
                     b.HasIndex("OrganizationsId");
 
-                    b.ToTable("JobPositionOrganization", (string)null);
+                    b.ToTable("JobPositionOrganization");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>

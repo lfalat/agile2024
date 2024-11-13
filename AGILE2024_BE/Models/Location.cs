@@ -10,6 +10,7 @@ namespace AGILE2024_BE.Models
         public required string Code { get; set; }
         public required string City { get; set; }
         public required string ZipCode { get; set; }
+        public required string Adress { get; set; }
         //širka
         public double? Latitude { get; set; }
         //dlžka

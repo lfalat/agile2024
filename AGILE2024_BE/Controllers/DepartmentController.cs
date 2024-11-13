@@ -112,11 +112,13 @@ namespace AGILE2024_BE.Controllers
 
                     var newDepartment = new Department
                     {
+                        //TODO Dorobiť vkladanie ID Usera
                         Id = Guid.NewGuid(),
                         Name = createRequest.Name,
                         Code = createRequest.Code,
                         Organization = organization,
-                        Archived = createRequest.Archived
+                        Archived = createRequest.Archived,
+                        Superior = null
                     };
                     dbContext.Departments.Add(newDepartment);
 
