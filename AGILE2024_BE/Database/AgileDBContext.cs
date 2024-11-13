@@ -34,7 +34,7 @@ namespace AGILE2024_BE.Data
         public DbSet<Goal> Goals { get; set; }
         public DbSet<GoalAssignment> GoalAssignments { get; set; }
         public DbSet<GoalStatus> GoalStatuses { get; set; }
-        public DbSet<GoalCategory> GoalCategories { get; set; } 
+        public DbSet<GoalCategory> GoalCategory{ get; set; } 
         public DbSet<Review> Reviews { get; set; }
         public DbSet<ReviewQuestion> ReviewQuestions { get; set; }
         public DbSet<ReviewRecipient> ReviewRecipents { get; set; }

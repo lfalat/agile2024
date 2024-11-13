@@ -118,7 +118,7 @@ namespace AGILE2024_BE.Controllers
         public async Task<IActionResult> UploadPicture(Guid userId, [FromForm]UploadPictureRequest req)
         {
             var user = await userManager.FindByIdAsync(userId.ToString());
-            BlobServiceClient client = new(config.GetSection("Blob")["connectionString"]);
+            BlobServiceClient client = new(config.GetSection("Blob")["BlobConnect"]);
             var containerClient = client.GetBlobContainerClient("images");
             var blobClient = containerClient.GetBlobClient($"{Guid.NewGuid().ToString()}.{req.file.FileName.Split('.').Last()}");
             await blobClient.UploadAsync(req.file.OpenReadStream(), true);

@@ -65,7 +65,7 @@ namespace AGILE2024_BE
 
                     if (existingContractType == null)
                     {
-                        await context.GoalCategories.AddAsync(goalCategory);
+                        await context.GoalCategory.AddAsync(goalCategory);
                     }
                 }
                 // Seed contract types
