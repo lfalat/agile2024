@@ -9,7 +9,8 @@ namespace AGILE2024_BE.Models.Requests
         public required string City { get; set; }
         public required string ZipCode { get; set; }
 
-        public List<string>? Organizations { get; set; } = new();
+        public List<string>? Organizations { get; set; }
+        public List<string>? OrganizationsID { get; set; } 
 
         public required string Adress { get; set; }
         //širka

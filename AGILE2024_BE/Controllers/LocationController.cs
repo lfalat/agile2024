@@ -37,7 +37,8 @@ namespace AGILE2024_BE.Controllers
         public async Task<IActionResult> Locations()
         {
             var locations = await dbContext.Locations
-        .Select(location => new LocationResponse
+                
+                .Select(location => new LocationResponse
         {
             Id = location.Id,
             Name = location.Name,
