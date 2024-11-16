@@ -51,7 +51,6 @@ namespace AGILE2024_BE.Controllers
             Created = location.Created,
             LastEdited = location.LastEdited,
             Archived = location.Archived,
-            // Retrieve organizations associated with the location
             Organizations = dbContext.Organizations
                 .Where(org => org.Location != null  && org.Location.Id == location.Id)
                 .Select(org => org.Name)
@@ -109,7 +108,6 @@ namespace AGILE2024_BE.Controllers
                 await dbContext.Locations.AddAsync(newLocation);
                 await dbContext.SaveChangesAsync();
 
-                // Associate Organizations with the new Location
                 if (createRequest.Organizations.Any())
                 {
                     var organizations = dbContext.Organizations
@@ -157,20 +155,17 @@ namespace AGILE2024_BE.Controllers
             existingLocation.Latitude = locationRequest.Latitude;
             existingLocation.LastEdited = DateTime.UtcNow;
 
-            // Update organizations associated with the location
             var existingOrganizations = dbContext.Organizations.Where(o => o.Location.Id == id).ToList();
-
-            // Remove organizations that are no longer in the request
+            
             var organizationsToRemove = existingOrganizations
                 .Where(o => !locationRequest.Organizations.Contains(o.Name))
                 .ToList();
 
             foreach (var org in organizationsToRemove)
             {
-                org.Location = null; // Disassociate organization from the location
+                org.Location = null; 
             }
 
-            // Add or update organizations from the request
             foreach (var orgName in locationRequest.Organizations)
             {
                 var organization = existingOrganizations.FirstOrDefault(o => o.Name == orgName);
