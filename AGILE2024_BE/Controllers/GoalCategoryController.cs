@@ -11,14 +11,16 @@ namespace AGILE2024_BE.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class EmployeeCardController : ControllerBase
+
+    
+    public class GoalCategoryController : ControllerBase
     {
         private UserManager<ExtendedIdentityUser> userManager;
         private RoleManager<IdentityRole> roleManager;
         private IConfiguration config;
         private AgileDBContext dbContext;
 
-        public EmployeeCardController(UserManager<ExtendedIdentityUser> um, IConfiguration co, RoleManager<IdentityRole> rm, AgileDBContext db)
+        public GoalCategoryController(UserManager<ExtendedIdentityUser> um, IConfiguration co, RoleManager<IdentityRole> rm, AgileDBContext db)
         {
             this.userManager = um;
             this.config = co;
@@ -26,14 +28,16 @@ namespace AGILE2024_BE.Controllers
             this.dbContext = db;
         }
 
-        [HttpGet("EmployeeCards")]
+        [HttpGet("Categories")]
         [Authorize(Roles = RolesDef.Veduci)]
-        public async Task<IActionResult> EmployeeCards()
+        public async Task<IActionResult> Categories()
         {
-            
-           
+            var categories = await dbContext.GoalCategory.ToListAsync();
 
-            return Ok();
+            return Ok(categories);
         }
     }
+
+
+    
 }
