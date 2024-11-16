@@ -1,6 +1,8 @@
 ﻿using AGILE2024_BE.Data;
+using AGILE2024_BE.Models;
 using AGILE2024_BE.Models.Identity;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using System.Diagnostics.Metrics;
 
 namespace AGILE2024_BE
@@ -11,31 +13,107 @@ namespace AGILE2024_BE
         {
             var _roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
             var _userManager = serviceProvider.GetRequiredService<UserManager<ExtendedIdentityUser>>();
+            var context = serviceProvider.GetRequiredService<AgileDBContext>();
 
             if (_roleManager != null && _userManager != null)
             {
-                IdentityRole? role = await _roleManager.FindByNameAsync("Správca systému");
+                //Seed FeedbackRequestStatuses
+                var feedbackRequestStatuses = new List<FeedbackRequestStatus>
+                {
+                    new FeedbackRequestStatus { description = "Vyplnený" },
+                    new FeedbackRequestStatus { description = "Zamietnutý" },
+                    new FeedbackRequestStatus { description = "Nevyplnený" }
+                };
+                foreach (var feedbackRequestStatus in feedbackRequestStatuses)
+                {
+                    var existingContractType = await context.ContractTypes
+                        .FirstOrDefaultAsync(ct => ct.Name == feedbackRequestStatus.description);
+
+                    if (existingContractType == null)
+                    {
+                        await context.FeedbackRequestStatuses.AddAsync(feedbackRequestStatus);
+                    }
+                }
+                // Seed GoalStatuses
+                var goalStatuses = new List<GoalStatus>
+                {
+                    new GoalStatus { description = "Nezačatý" },
+                    new GoalStatus { description = "Prebiehajúci" },
+                    new GoalStatus { description = "Dokončený" },
+                    new GoalStatus { description = "Zrušený" }
+                };
+                foreach (var goalStatus in goalStatuses)
+                {
+                    var existingContractType = await context.ContractTypes
+                        .FirstOrDefaultAsync(ct => ct.Name == goalStatus.description);
+
+                    if (existingContractType == null)
+                    {
+                        await context.GoalStatuses.AddAsync(goalStatus);
+                    }
+                }
+                //Seed GoalCategory
+                var goalCategories = new List<GoalCategory>
+                {
+                    new GoalCategory { description = "Výkonostný rozvoj" },
+                    new GoalCategory { description = "Osobný rozvoj" }
+                };
+                foreach (var goalCategory in goalCategories)
+                {
+                    var existingContractType = await context.ContractTypes
+                        .FirstOrDefaultAsync(ct => ct.Name == goalCategory.description);
+
+                    if (existingContractType == null)
+                    {
+                        await context.GoalCategory.AddAsync(goalCategory);
+                    }
+                }
+                // Seed contract types
+                var contractTypes = new List<ContractType>
+                {
+                    new ContractType { Name = "Dohoda o brigádnickej práci študentove" },
+                    new ContractType { Name = "Trvalý pracovný pomer" },
+                    new ContractType { Name = "Dohoda o vykonaní práce" },
+                    new ContractType { Name = "Dohoda o pracovnej činnosti" },
+                    new ContractType { Name = "Živnosť" },
+                    new ContractType { Name = "Externý zamestnanec" }
+                };
+
+                foreach (var contractType in contractTypes)
+                {
+                    var existingContractType = await context.ContractTypes
+                        .FirstOrDefaultAsync(ct => ct.Name == contractType.Name);
+
+                    if (existingContractType == null)
+                    {
+                        await context.ContractTypes.AddAsync(contractType);
+                    }
+                }
+                await context.SaveChangesAsync();
+
+                // Seed roles
+                IdentityRole? role = await _roleManager.FindByNameAsync(RolesDef.Spravca);
                 if (role == null)
                 {
-                    await _roleManager.CreateAsync(new IdentityRole("Správca systému"));
+                    await _roleManager.CreateAsync(new IdentityRole(RolesDef.Spravca));
                 }
 
-                IdentityRole? role2 = await _roleManager.FindByNameAsync("Zamestnanec");
+                IdentityRole? role2 = await _roleManager.FindByNameAsync(RolesDef.Zamestnanec);
                 if (role2 == null)
                 {
-                    await _roleManager.CreateAsync(new IdentityRole("Zamestnanec"));
+                    await _roleManager.CreateAsync(new IdentityRole(RolesDef.Zamestnanec));
                 }
 
-                IdentityRole? role3 = await _roleManager.FindByNameAsync("Výkonný používateľ (Power User)");
+                IdentityRole? role3 = await _roleManager.FindByNameAsync(RolesDef.PowerUser);
                 if (role3 == null)
                 {
-                    await _roleManager.CreateAsync(new IdentityRole("Výkonný používateľ (Power User)"));
+                    await _roleManager.CreateAsync(new IdentityRole(RolesDef.PowerUser));
                 }
 
-                IdentityRole? role4 = await _roleManager.FindByNameAsync("Vedúci zamestnanec");
+                IdentityRole? role4 = await _roleManager.FindByNameAsync(RolesDef.Veduci);
                 if (role4 == null)
                 {
-                    await _roleManager.CreateAsync(new IdentityRole("Vedúci zamestnanec"));
+                    await _roleManager.CreateAsync(new IdentityRole(RolesDef.Veduci));
                 }
 
                 ExtendedIdentityUser? admin = await _userManager.FindByEmailAsync("patrik@email.com");

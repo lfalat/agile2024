@@ -26,7 +26,19 @@ namespace AGILE2024_BE.Data
         public DbSet<Level> Levels { get; set; }
         public DbSet<Location> Locations { get; set; }
         public DbSet<Organization> Organizations { get; set; }
-        #endregion
+        public DbSet<FeedbackAnswer> FeedbackAnswers { get; set; }
+        public DbSet<FeedbackQuestion> FeedbackQuestions { get; set; }
+        public DbSet<FeedbackRequest> FeedbackRequests { get; set; }
+        public DbSet<FeedbackRequestStatus> FeedbackRequestStatuses { get; set; }
+        public DbSet<FeedbackRecipient> FeedbackRecipients { get; set; }
+        public DbSet<Goal> Goals { get; set; }
+        public DbSet<GoalAssignment> GoalAssignments { get; set; }
+        public DbSet<GoalStatus> GoalStatuses { get; set; }
+        public DbSet<GoalCategory> GoalCategory{ get; set; } 
+        public DbSet<Review> Reviews { get; set; }
+        public DbSet<ReviewQuestion> ReviewQuestions { get; set; }
+        public DbSet<ReviewRecipient> ReviewRecipents { get; set; }
 
+        #endregion
     }
 }

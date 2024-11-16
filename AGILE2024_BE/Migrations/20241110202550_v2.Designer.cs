@@ -4,6 +4,7 @@ using AGILE2024_BE.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AGILE2024_BE.Migrations
 {
     [DbContext(typeof(AgileDBContext))]
-    partial class AgileDBContextModelSnapshot : ModelSnapshot
+    [Migration("20241110202550_v2")]
+    partial class v2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -33,7 +36,7 @@ namespace AGILE2024_BE.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ContractTypes", (string)null);
+                    b.ToTable("ContractTypes");
                 });
 
             modelBuilder.Entity("AGILE2024_BE.Models.Department", b =>
@@ -65,18 +68,13 @@ namespace AGILE2024_BE.Migrations
                     b.Property<Guid?>("ParentDepartmentId")
                         .HasColumnType("char(36)");
 
-                    b.Property<string>("UserIdentityResponseId")
-                        .HasColumnType("varchar(255)");
-
                     b.HasKey("Id");
 
                     b.HasIndex("OrganizationId");
 
                     b.HasIndex("ParentDepartmentId");
 
-                    b.HasIndex("UserIdentityResponseId");
-
-                    b.ToTable("Departments", (string)null);
+                    b.ToTable("Departments");
                 });
 
             modelBuilder.Entity("AGILE2024_BE.Models.EmployeeCard", b =>
@@ -131,220 +129,7 @@ namespace AGILE2024_BE.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("EmployeeCards", (string)null);
-                });
-
-            modelBuilder.Entity("AGILE2024_BE.Models.FeedbackAnswer", b =>
-                {
-                    b.Property<Guid>("id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
-
-                    b.Property<Guid>("FeedbackQuestionId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<DateTime>("answeredDate")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("text")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.HasKey("id");
-
-                    b.HasIndex("FeedbackQuestionId");
-
-                    b.ToTable("FeedbackAnswers", (string)null);
-                });
-
-            modelBuilder.Entity("AGILE2024_BE.Models.FeedbackQuestion", b =>
-                {
-                    b.Property<Guid>("id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
-
-                    b.Property<Guid>("FeedbackRequestId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<int>("order")
-                        .HasColumnType("int");
-
-                    b.Property<string>("text")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.HasKey("id");
-
-                    b.HasIndex("FeedbackRequestId");
-
-                    b.ToTable("FeedbackQuestions", (string)null);
-                });
-
-            modelBuilder.Entity("AGILE2024_BE.Models.FeedbackRecipient", b =>
-                {
-                    b.Property<Guid>("id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
-
-                    b.Property<Guid>("EmployeeCardId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<Guid>("FeedbackRequestId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<bool>("isRead")
-                        .HasColumnType("tinyint(1)");
-
-                    b.Property<DateTime?>("recievedDate")
-                        .HasColumnType("datetime(6)");
-
-                    b.HasKey("id");
-
-                    b.HasIndex("EmployeeCardId");
-
-                    b.HasIndex("FeedbackRequestId");
-
-                    b.ToTable("FeedbackRecipients", (string)null);
-                });
-
-            modelBuilder.Entity("AGILE2024_BE.Models.FeedbackRequest", b =>
-                {
-                    b.Property<Guid>("id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
-
-                    b.Property<Guid>("EmployeeCardId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<Guid>("FeedbackRequestStatusId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<DateTime>("createDate")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<DateTime?>("sentAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("title")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.HasKey("id");
-
-                    b.HasIndex("EmployeeCardId");
-
-                    b.HasIndex("FeedbackRequestStatusId");
-
-                    b.ToTable("FeedbackRequests", (string)null);
-                });
-
-            modelBuilder.Entity("AGILE2024_BE.Models.FeedbackRequestStatus", b =>
-                {
-                    b.Property<Guid>("id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
-
-                    b.Property<string>("description")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.HasKey("id");
-
-                    b.ToTable("FeedbackRequestStatuses", (string)null);
-                });
-
-            modelBuilder.Entity("AGILE2024_BE.Models.Goal", b =>
-                {
-                    b.Property<Guid>("id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
-
-                    b.Property<Guid>("EmployeeCardId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<Guid>("GoalCategoryId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<Guid>("GoalStatusId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<string>("description")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<DateTime>("dueDate")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<DateTime?>("finishedDate")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<DateTime?>("fullfilmentDate")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("name")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.HasKey("id");
-
-                    b.HasIndex("EmployeeCardId");
-
-                    b.HasIndex("GoalCategoryId");
-
-                    b.HasIndex("GoalStatusId");
-
-                    b.ToTable("Goals", (string)null);
-                });
-
-            modelBuilder.Entity("AGILE2024_BE.Models.GoalAssignment", b =>
-                {
-                    b.Property<Guid>("id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
-
-                    b.Property<Guid>("EmployeeCardId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<Guid>("GoalId")
-                        .HasColumnType("char(36)");
-
-                    b.HasKey("id");
-
-                    b.HasIndex("EmployeeCardId");
-
-                    b.HasIndex("GoalId");
-
-                    b.ToTable("GoalAssignments", (string)null);
-                });
-
-            modelBuilder.Entity("AGILE2024_BE.Models.GoalCategory", b =>
-                {
-                    b.Property<Guid>("id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
-
-                    b.Property<string>("description")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.HasKey("id");
-
-                    b.ToTable("GoalCategory", (string)null);
-                });
-
-            modelBuilder.Entity("AGILE2024_BE.Models.GoalStatus", b =>
-                {
-                    b.Property<Guid>("id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
-
-                    b.Property<string>("description")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.HasKey("id");
-
-                    b.ToTable("GoalStatuses", (string)null);
+                    b.ToTable("EmployeeCards");
                 });
 
             modelBuilder.Entity("AGILE2024_BE.Models.Identity.ExtendedIdentityUser", b =>
@@ -396,9 +181,6 @@ namespace AGILE2024_BE.Migrations
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("tinyint(1)");
 
-                    b.Property<string>("ProfilePicLink")
-                        .HasColumnType("longtext");
-
                     b.Property<string>("RefreshToken")
                         .HasColumnType("longtext");
 
@@ -427,6 +209,9 @@ namespace AGILE2024_BE.Migrations
                     b.Property<string>("UserName")
                         .HasMaxLength(256)
                         .HasColumnType("varchar(256)");
+
+                    b.Property<Guid?>("profilePicGuid")
+                        .HasColumnType("char(36)");
 
                     b.HasKey("Id");
 
@@ -467,7 +252,7 @@ namespace AGILE2024_BE.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("JobPositions", (string)null);
+                    b.ToTable("JobPositions");
                 });
 
             modelBuilder.Entity("AGILE2024_BE.Models.Level", b =>
@@ -486,7 +271,7 @@ namespace AGILE2024_BE.Migrations
 
                     b.HasIndex("JobPositionId");
 
-                    b.ToTable("Levels", (string)null);
+                    b.ToTable("Levels");
                 });
 
             modelBuilder.Entity("AGILE2024_BE.Models.Location", b =>
@@ -494,10 +279,6 @@ namespace AGILE2024_BE.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("char(36)");
-
-                    b.Property<string>("Adress")
-                        .IsRequired()
-                        .HasColumnType("longtext");
 
                     b.Property<bool>("Archived")
                         .HasColumnType("tinyint(1)");
@@ -532,7 +313,7 @@ namespace AGILE2024_BE.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Locations", (string)null);
+                    b.ToTable("Locations");
                 });
 
             modelBuilder.Entity("AGILE2024_BE.Models.Organization", b =>
@@ -565,114 +346,7 @@ namespace AGILE2024_BE.Migrations
 
                     b.HasIndex("LocationId");
 
-                    b.ToTable("Organizations", (string)null);
-                });
-
-            modelBuilder.Entity("AGILE2024_BE.Models.Response.UserIdentityResponse", b =>
-                {
-                    b.Property<string>("id")
-                        .HasColumnType("varchar(255)");
-
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("FirstName")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("LastName")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("ProfilePicLink")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("Role")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("TitleAfter")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("TitleBefore")
-                        .HasColumnType("longtext");
-
-                    b.HasKey("id");
-
-                    b.ToTable("UserIdentityResponse", (string)null);
-                });
-
-            modelBuilder.Entity("AGILE2024_BE.Models.Review", b =>
-                {
-                    b.Property<Guid>("id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
-
-                    b.Property<Guid>("EmployeeCardId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<int>("counter")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("createDate")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<DateTime>("employeeEndDate")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<DateTime?>("endDate")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<DateTime>("superiorEndDate")
-                        .HasColumnType("datetime(6)");
-
-                    b.HasKey("id");
-
-                    b.HasIndex("EmployeeCardId");
-
-                    b.ToTable("Reviews", (string)null);
-                });
-
-            modelBuilder.Entity("AGILE2024_BE.Models.ReviewQuestion", b =>
-                {
-                    b.Property<Guid>("id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
-
-                    b.Property<Guid>("ReviewRecipientId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<string>("employeeDescription")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("superiorDescription")
-                        .HasColumnType("longtext");
-
-                    b.HasKey("id");
-
-                    b.HasIndex("ReviewRecipientId");
-
-                    b.ToTable("ReviewQuestions", (string)null);
-                });
-
-            modelBuilder.Entity("AGILE2024_BE.Models.ReviewRecipient", b =>
-                {
-                    b.Property<Guid>("id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
-
-                    b.Property<Guid>("GoalAssignmentId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<string>("employeeDescription")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("superiorDescription")
-                        .HasColumnType("longtext");
-
-                    b.HasKey("id");
-
-                    b.HasIndex("GoalAssignmentId");
-
-                    b.ToTable("ReviewRecipents", (string)null);
+                    b.ToTable("Organizations");
                 });
 
             modelBuilder.Entity("JobPositionOrganization", b =>
@@ -687,7 +361,7 @@ namespace AGILE2024_BE.Migrations
 
                     b.HasIndex("OrganizationsId");
 
-                    b.ToTable("JobPositionOrganization", (string)null);
+                    b.ToTable("JobPositionOrganization");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -832,15 +506,9 @@ namespace AGILE2024_BE.Migrations
                         .WithMany()
                         .HasForeignKey("ParentDepartmentId");
 
-                    b.HasOne("AGILE2024_BE.Models.Response.UserIdentityResponse", "Superior")
-                        .WithMany()
-                        .HasForeignKey("UserIdentityResponseId");
-
                     b.Navigation("Organization");
 
                     b.Navigation("ParentDepartment");
-
-                    b.Navigation("Superior");
                 });
 
             modelBuilder.Entity("AGILE2024_BE.Models.EmployeeCard", b =>
@@ -878,112 +546,6 @@ namespace AGILE2024_BE.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("AGILE2024_BE.Models.FeedbackAnswer", b =>
-                {
-                    b.HasOne("AGILE2024_BE.Models.FeedbackQuestion", "request")
-                        .WithMany()
-                        .HasForeignKey("FeedbackQuestionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("request");
-                });
-
-            modelBuilder.Entity("AGILE2024_BE.Models.FeedbackQuestion", b =>
-                {
-                    b.HasOne("AGILE2024_BE.Models.FeedbackRequest", "request")
-                        .WithMany()
-                        .HasForeignKey("FeedbackRequestId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("request");
-                });
-
-            modelBuilder.Entity("AGILE2024_BE.Models.FeedbackRecipient", b =>
-                {
-                    b.HasOne("AGILE2024_BE.Models.EmployeeCard", "employee")
-                        .WithMany()
-                        .HasForeignKey("EmployeeCardId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("AGILE2024_BE.Models.FeedbackRequest", "feedbackRequest")
-                        .WithMany()
-                        .HasForeignKey("FeedbackRequestId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("employee");
-
-                    b.Navigation("feedbackRequest");
-                });
-
-            modelBuilder.Entity("AGILE2024_BE.Models.FeedbackRequest", b =>
-                {
-                    b.HasOne("AGILE2024_BE.Models.EmployeeCard", "sender")
-                        .WithMany()
-                        .HasForeignKey("EmployeeCardId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("AGILE2024_BE.Models.FeedbackRequestStatus", "status")
-                        .WithMany()
-                        .HasForeignKey("FeedbackRequestStatusId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("sender");
-
-                    b.Navigation("status");
-                });
-
-            modelBuilder.Entity("AGILE2024_BE.Models.Goal", b =>
-                {
-                    b.HasOne("AGILE2024_BE.Models.EmployeeCard", "employee")
-                        .WithMany()
-                        .HasForeignKey("EmployeeCardId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("AGILE2024_BE.Models.GoalCategory", "category")
-                        .WithMany()
-                        .HasForeignKey("GoalCategoryId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("AGILE2024_BE.Models.GoalStatus", "status")
-                        .WithMany()
-                        .HasForeignKey("GoalStatusId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("category");
-
-                    b.Navigation("employee");
-
-                    b.Navigation("status");
-                });
-
-            modelBuilder.Entity("AGILE2024_BE.Models.GoalAssignment", b =>
-                {
-                    b.HasOne("AGILE2024_BE.Models.EmployeeCard", "employee")
-                        .WithMany()
-                        .HasForeignKey("EmployeeCardId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("AGILE2024_BE.Models.Goal", "goal")
-                        .WithMany()
-                        .HasForeignKey("GoalId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("employee");
-
-                    b.Navigation("goal");
-                });
-
             modelBuilder.Entity("AGILE2024_BE.Models.Identity.ExtendedIdentityUser", b =>
                 {
                     b.HasOne("AGILE2024_BE.Models.Identity.ExtendedIdentityUser", "Superior")
@@ -1009,39 +571,6 @@ namespace AGILE2024_BE.Migrations
                         .HasForeignKey("LocationId");
 
                     b.Navigation("Location");
-                });
-
-            modelBuilder.Entity("AGILE2024_BE.Models.Review", b =>
-                {
-                    b.HasOne("AGILE2024_BE.Models.EmployeeCard", "sender")
-                        .WithMany()
-                        .HasForeignKey("EmployeeCardId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("sender");
-                });
-
-            modelBuilder.Entity("AGILE2024_BE.Models.ReviewQuestion", b =>
-                {
-                    b.HasOne("AGILE2024_BE.Models.ReviewRecipient", "goalAssignment")
-                        .WithMany()
-                        .HasForeignKey("ReviewRecipientId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("goalAssignment");
-                });
-
-            modelBuilder.Entity("AGILE2024_BE.Models.ReviewRecipient", b =>
-                {
-                    b.HasOne("AGILE2024_BE.Models.GoalAssignment", "goalAssignment")
-                        .WithMany()
-                        .HasForeignKey("GoalAssignmentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("goalAssignment");
                 });
 
             modelBuilder.Entity("JobPositionOrganization", b =>

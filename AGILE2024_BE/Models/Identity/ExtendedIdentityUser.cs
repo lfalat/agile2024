@@ -16,5 +16,6 @@ namespace AGILE2024_BE.Models.Identity
         public required string Surname { get; set; }
         public string? Title_after { get; set; }
         public string? Title_before { get; set; }
+        public string? ProfilePicLink { get; set; }
     }
 }
