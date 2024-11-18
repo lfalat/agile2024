@@ -14,7 +14,7 @@ namespace AGILE2024_BE.Models
         [ForeignKey(nameof(GoalStatus) + "Id")]
         public required GoalStatus status { get; set; }
         public required DateTime dueDate { get; set; }
-        public DateTime? fullfilmentDate { get; set; }
+        public int? fullfilmentRate { get; set; }
         public DateTime? finishedDate { get; set; }
         [ForeignKey(nameof(EmployeeCard) + "Id")]
         public required EmployeeCard employee { get; set; }
