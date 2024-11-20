@@ -35,10 +35,10 @@ namespace AGILE2024_BE.Controllers
         [HttpGet("GetUnarchaved")]
         public async Task<IActionResult> GetUnarchaved()
         {
-            var organizations = dbContext.Organizations.Where( x => x.Archived == false ).ToList();
+            var organizations = dbContext.Organizations.Where(x => x.Archived == false).ToList();
 
             return Ok(organizations);
-        
+        }
         [HttpGet("Organizations")]
         [Authorize(Roles = RolesDef.Spravca)]
         public async Task<IActionResult> Organizations()
