@@ -8,7 +8,7 @@
         public string GoalCategoryId { get; set; }  
         public string Status { get; set; }  
         public DateTime DueDate { get; set; }  
-        //public string CompletionRate { get; set; }  
+        public int FullfilmentRate { get; set; }  
         public DateTime FinishedDate { get; set; }  
         //public List<string> EmployeeIds { get; set; }  
     }

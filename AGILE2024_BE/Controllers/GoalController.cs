@@ -29,17 +29,17 @@ namespace AGILE2024_BE.Controllers
 
         [HttpGet("Goals")]
         [Authorize(Roles = RolesDef.Veduci)]
-        public async Task<IActionResult> Organizations()
+        public async Task<IActionResult> Goals()
         {
             try
             {
                 ExtendedIdentityUser? user = await userManager.FindByEmailAsync(User.Identity?.Name!);
 
 
-                var goals1 = await dbContext.Goals
+                /*var goals1 = await dbContext.Goals
                     .Include(g => g.employee)
                     .ThenInclude(e => e.User)
-                    .Where(g => g.employee.User.Id == user.Id).ToListAsync();
+                    .Where(g => g.employee.User.Id == user.Id).ToListAsync();*/
 
                 var goals = await dbContext.Goals
                      .Include(g => g.employee)
@@ -52,6 +52,9 @@ namespace AGILE2024_BE.Controllers
                         g.id,
                         g.name,
                         g.description,
+                        g.finishedDate,
+                        g.fullfilmentRate,
+                        g.dueDate,
                         categoryDescription = g.category.description,
                         statusDescription = g.status.description,
                         AssignedEmployees = dbContext.GoalAssignments
@@ -209,11 +212,11 @@ namespace AGILE2024_BE.Controllers
                 goal.status = goalStatus; 
                 goal.dueDate = request.DueDate;
 
-                // To DO nedali sme rate ale date
-                /*if (request.CompletionRate.HasValue)
+                
+                if (request.FullfilmentRate != null)
                 {
-                    goal.fullfilmentDate = request.CompletionRate.Value;
-                }*/
+                    goal.fullfilmentRate = request.FullfilmentRate;
+                }
 
                 if (request.FinishedDate != null)
                 {

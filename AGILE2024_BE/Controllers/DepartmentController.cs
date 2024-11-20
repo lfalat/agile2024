@@ -110,6 +110,13 @@ namespace AGILE2024_BE.Controllers
                         return BadRequest($"Organizacia {createRequest.Organization} nexistuje.");
                     }
 
+                    //ak bude mat department employee card
+                    var superior = await dbContext.EmployeeCards
+                        .Include(o => o.User)
+                        .FirstOrDefaultAsync(o => o.User.Id == createRequest.superiorId.ToString());
+
+                    
+                    
                     var newDepartment = new Department
                     {
                         //TODO Dorobiť vkladanie ID Usera
@@ -118,7 +125,7 @@ namespace AGILE2024_BE.Controllers
                         Code = createRequest.Code,
                         Organization = organization,
                         Archived = createRequest.Archived,
-                        Superior = null
+                        Superior = null,
                     };
                     dbContext.Departments.Add(newDepartment);
 

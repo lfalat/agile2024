@@ -7,6 +7,10 @@
         public string Code { get; set; }
         public string City { get; set; }
         public string ZipCode { get; set; }
+        public string Adress { get; set; }
+
+        public List<String>? Organizations { get; set; }
+
         //širka
         public double? Latitude { get; set; }
         //dlžka
