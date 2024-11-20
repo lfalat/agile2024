@@ -9,7 +9,7 @@ namespace AGILE2024_BE.Models
         public Guid Id { get; set; }
 
         [ForeignKey(nameof(User) + "Id")]
-        public required ExtendedIdentityUser User { get; set; }
+        public required ExtendedIdentityUser? User { get; set; }
 
         [ForeignKey(nameof(Location) + "Id")]
         public Location? Location { get; set; }
