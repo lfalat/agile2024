@@ -4,6 +4,7 @@ using AGILE2024_BE.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AGILE2024_BE.Migrations
 {
     [DbContext(typeof(AgileDBContext))]
-    partial class AgileDBContextModelSnapshot : ModelSnapshot
+    [Migration("20241120115735_Sprint3_v4")]
+    partial class Sprint3_v4
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -65,16 +68,11 @@ namespace AGILE2024_BE.Migrations
                     b.Property<Guid?>("ParentDepartmentId")
                         .HasColumnType("char(36)");
 
-                    b.Property<string>("SuperiorId")
-                        .HasColumnType("varchar(255)");
-
                     b.HasKey("Id");
 
                     b.HasIndex("OrganizationId");
 
                     b.HasIndex("ParentDepartmentId");
-
-                    b.HasIndex("SuperiorId");
 
                     b.ToTable("Departments");
                 });
@@ -799,15 +797,9 @@ namespace AGILE2024_BE.Migrations
                         .WithMany()
                         .HasForeignKey("ParentDepartmentId");
 
-                    b.HasOne("AGILE2024_BE.Models.Identity.ExtendedIdentityUser", "Superior")
-                        .WithMany()
-                        .HasForeignKey("SuperiorId");
-
                     b.Navigation("Organization");
 
                     b.Navigation("ParentDepartment");
-
-                    b.Navigation("Superior");
                 });
 
             modelBuilder.Entity("AGILE2024_BE.Models.EmployeeCard", b =>
