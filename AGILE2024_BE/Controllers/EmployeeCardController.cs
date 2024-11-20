@@ -108,5 +108,39 @@ namespace AGILE2024_BE.Controllers
 
             return Ok();
         }
+
+        [HttpGet("GetUserByEmployeeCard")]
+        public async Task<IActionResult> GetUserByEmployeeCard(string employeeCardId)
+        {
+            // Assuming you have a DbContext or repository to access EmployeeCard and User data
+            var employeeCard = await dbContext.EmployeeCards
+                .Include(ec => ec.User) // Include the related user
+                .FirstOrDefaultAsync(ec => ec.Id.ToString() == employeeCardId
+                );
+
+            if (employeeCard == null || employeeCard.User == null)
+            {
+                return NotFound("Employee card or user not found.");
+            }
+
+            // Get the user information from the User object associated with the EmployeeCard
+            var user = employeeCard.User;
+            var roles = await userManager.GetRolesAsync(user);
+
+            var userIdentityResponse = new UserIdentityResponse
+            {
+                id = user.Id,
+                Email = user.Email!,
+                FirstName = user.Name ?? string.Empty,
+                LastName = user.Surname ?? string.Empty,
+                TitleBefore = user.Title_before ?? string.Empty,
+                TitleAfter = user.Title_after ?? string.Empty,
+                Role = roles.FirstOrDefault(),
+                ProfilePicLink = user.ProfilePicLink
+            };
+
+            return Ok(userIdentityResponse);
+        }
+
     }
 }
