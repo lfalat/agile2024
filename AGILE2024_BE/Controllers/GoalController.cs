@@ -91,10 +91,15 @@ namespace AGILE2024_BE.Controllers
         {
             try
             {
+
                 ExtendedIdentityUser? user = await userManager.FindByEmailAsync(User.Identity?.Name!);
                 if (user == null)
                 {
                     return Unauthorized("User not found.");
+                }
+                if (request.EmployeeIds == null || !request.EmployeeIds.Any())
+                {
+                    return BadRequest("At least one employee must be assigned to the goal.");
                 }
                 var employeeCard = await dbContext.EmployeeCards
                     .FirstOrDefaultAsync(ec => ec.User.Id == user.Id);
