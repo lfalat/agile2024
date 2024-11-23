@@ -1,29 +1,23 @@
 ﻿using AGILE2024_BE.Data;
-using AGILE2024_BE.Models;
 using AGILE2024_BE.Models.Identity;
-using AGILE2024_BE.Models.Requests;
-using AGILE2024_BE.Models.Requests.JobPositionRequests;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Reflection.Emit;
 
 namespace AGILE2024_BE.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = RolesDef.Spravca)]
-    public class ContractTypeController : ControllerBase
+    public class GoalStatusController : ControllerBase
     {
         private UserManager<ExtendedIdentityUser> userManager;
         private RoleManager<IdentityRole> roleManager;
         private IConfiguration config;
         private AgileDBContext dbContext;
 
-        public ContractTypeController(UserManager<ExtendedIdentityUser> um, IConfiguration co, RoleManager<IdentityRole> rm, AgileDBContext db)
+        public GoalStatusController(UserManager<ExtendedIdentityUser> um, IConfiguration co, RoleManager<IdentityRole> rm, AgileDBContext db)
         {
             this.userManager = um;
             this.config = co;
@@ -31,12 +25,13 @@ namespace AGILE2024_BE.Controllers
             this.dbContext = db;
         }
 
-        [HttpGet("GetAll")]
-        [Authorize(Roles = RolesDef.Spravca)]
-        public async Task<IActionResult> GetAllAsync()
+        [HttpGet("Statuses")]
+        [Authorize(Roles = RolesDef.Veduci)]
+        public async Task<IActionResult> Statuses()
         {
-            var data = await dbContext.ContractTypes.ToListAsync();
-            return Ok(data);
+            var statuses = await dbContext.GoalStatuses.ToListAsync();
+
+            return Ok(statuses);
         }
     }
 }

@@ -110,15 +110,28 @@ namespace AGILE2024_BE.Controllers
                         return BadRequest($"Organizacia {createRequest.Organization} nexistuje.");
                     }
 
+<<<<<<< HEAD
+=======
+                    string supString = createRequest.superior.ToString();
+
+                    var superior = await dbContext.Users
+                        .FirstOrDefaultAsync(o => o.Id == createRequest.superior.ToString());
+
+                    
+                    
+>>>>>>> 2834ae1 (doplnenie veduceho oddelenia, doplnenie cielov)
                     var newDepartment = new Department
                     {
-                        //TODO Dorobiť vkladanie ID Usera
                         Id = Guid.NewGuid(),
                         Name = createRequest.Name,
                         Code = createRequest.Code,
                         Organization = organization,
                         Archived = createRequest.Archived,
+<<<<<<< HEAD
                         Superior = null
+=======
+                        Superior = superior,
+>>>>>>> 2834ae1 (doplnenie veduceho oddelenia, doplnenie cielov)
                     };
                     dbContext.Departments.Add(newDepartment);
 
@@ -261,6 +274,14 @@ namespace AGILE2024_BE.Controllers
                     return NotFound("Oddelenie sa nenašlo");
                 }
 
+                var superior = await dbContext.Users
+                    .FirstOrDefaultAsync(s => s.Id == editRequest.SuperiorId);
+
+                if (superior == null && editRequest.SuperiorId != null)
+                {
+                    return BadRequest($"Vedúci oddelenia {editRequest.SuperiorId} neexistuje.");
+                }
+
                 var organization = await dbContext.Organizations
                     .FirstOrDefaultAsync(o => o.Id.ToString() == editRequest.Organization);
 
@@ -271,6 +292,7 @@ namespace AGILE2024_BE.Controllers
 
                 existingDepartment.Name = editRequest.Name;
                 existingDepartment.Code = editRequest.Code;
+                existingDepartment.Superior = superior;
                 existingDepartment.Organization = organization ?? existingDepartment.Organization; 
                 existingDepartment.Archived = editRequest.Archived;
 
@@ -359,11 +381,18 @@ namespace AGILE2024_BE.Controllers
             var department = await dbContext.Departments
         .Include(d => d.Organization)
         .Include(d => d.ParentDepartment)
+        .Include(d => d.Superior)
         .FirstOrDefaultAsync(d => d.Id == departmentId);
 
             if (department == null)
             {
                 return NotFound(new { message = "Oddelenie s týmto ID neexistuje." });
+            }
+            string superiorRole = "";
+            if (department.Superior != null)
+            {
+                var superiorRoles = await userManager.GetRolesAsync(department.Superior);
+                superiorRole = superiorRoles.FirstOrDefault() ?? "";
             }
 
             var childDepartments = await dbContext.Departments
@@ -376,6 +405,10 @@ namespace AGILE2024_BE.Controllers
                 Id = department.Id,
                 Name = department.Name,
                 Code = department.Code,
+                SuperiorId = department.Superior?.Id,
+                SuperiorName = department.Superior != null
+            ? $"{department.Superior.Name} {department.Superior.Surname}, {superiorRole}"
+            : null,
                 OrganizationId = department.Organization.Id,
                 OrganizationName = department.Organization?.Name,
                 Created = department.Created,
@@ -438,14 +471,6 @@ namespace AGILE2024_BE.Controllers
             dbContext.Departments.Remove(department);
             await dbContext.SaveChangesAsync();
             return Ok(new { message = "Oddelenie úspešne vymazané" });
-        }
-
-        [HttpGet("GetAllUnarchived")]
-        public async Task<IActionResult> GetAllUnarchived()
-        {
-            var result = await dbContext.Departments.Where(x => x.Archived == false).ToListAsync();
-
-            return Ok(result);
         }
     }
 }
