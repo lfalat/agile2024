@@ -15,7 +15,7 @@ namespace AGILE2024_BE.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = RolesDef.Spravca)]
+    //[Authorize(Roles = RolesDef.Spravca)]
     public class JobPositionController : ControllerBase
     {
         private UserManager<ExtendedIdentityUser> userManager;
@@ -178,7 +178,7 @@ namespace AGILE2024_BE.Controllers
         }
 
         [HttpGet("GetAll")]
-        [Authorize(Roles = RolesDef.Spravca)]
+        [Authorize(Roles = RolesDef.Spravca + ", " + RolesDef.Veduci + ", " + RolesDef.Zamestnanec)]
         public async Task<IActionResult> GetAllAsync()
         {
             var data = await dbContext.JobPositions.ToListAsync();
