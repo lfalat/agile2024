@@ -36,7 +36,7 @@ namespace AGILE2024_BE.Controllers
 
         [HttpGet("ByUserId/{userId}")]
         [Authorize]
-        public async Task<IActionResult> GetEmployeeCardByUserId(Guid userId)
+        public async Task<IActionResult> GetEmployeeCardByUserId(Guid userId, bool getIds = false)
         {
             var user = await userManager.FindByIdAsync(userId.ToString());
             if (user == null)
@@ -49,6 +49,7 @@ namespace AGILE2024_BE.Controllers
                 .Include(e => e.Department)
                 .ThenInclude(d => d.Organization)
                 .Include(e => e.Level)
+                .ThenInclude(x => x.JobPosition)
                 .Include(e => e.ContractType)
 
                 .FirstOrDefaultAsync(e => e.User.Id == userId.ToString());
@@ -56,32 +57,77 @@ namespace AGILE2024_BE.Controllers
 
             if (employeeCard == null)
             {
-                return NotFound(new { message = "Zamestnanecká karta pre tohto používateľa neexistuje." });
+                EmployeeCard employee = new()
+                {
+                    Archived = false,
+                    Created = DateTime.Now,
+                    LastEdited = DateTime.Now,
+                    User = user
+                };
+                await dbContext.EmployeeCards.AddAsync(employee);
+                await dbContext.SaveChangesAsync();
+                employeeCard = employee;
+                //return NotFound(new { message = "Zamestnanecká karta pre tohto používateľa neexistuje." });
             }
-
-            var employeeCardResponse = new EmployeeCardResponse
+            EmployeeCardResponse employeeCardResponse;
+            if (getIds)
             {
-                EmployeeId = employeeCard.Id,
-                Email = employeeCard.User.Email,
-                Birthdate = employeeCard.Birthdate?.ToString("yyyy-MM-dd"),
-                Position = employeeCard.Level?.Name ?? "Neznáma pozícia",
-                StartWorkDate = employeeCard.StartWorkDate?.ToString("yyyy-MM-dd"),
-                Name = employeeCard.User.Name,
-                TitleBefore = employeeCard.User.Title_before,
-                TitleAfter = employeeCard.User.Title_after,
-                Department = employeeCard.Department?.Name ?? "Nezaradené oddelenie",
-                Organization = employeeCard.Department?.Organization?.Name ?? "Neznáma organizácia",
-                ContractType = employeeCard.ContractType?.Name ?? "Neznámy typ zmluvy",
-                WorkPercentage = employeeCard.WorkPercentage,
-                Surname = employeeCard.User.Surname,
-                Location = employeeCard.Location?.Name ?? "Neznáma lokalita",
-                Archived = employeeCard.Archived,
-                EmploymentDuration = employeeCard.StartWorkDate.HasValue
-            ? GetEmploymentDuration(employeeCard.StartWorkDate.Value, DateTime.Now)
-            : "Neznáma doba zamestnania",
-                MiddleName = employeeCard.User.MiddleName
-            };
-
+                try
+                {
+                    employeeCardResponse = new EmployeeCardResponse
+                    {
+                        EmployeeId = employeeCard.Id, 
+                        Email = employeeCard.User?.Email ?? "", 
+                        Birthdate = employeeCard.Birthdate?.ToString() ?? "",  
+                        Position = employeeCard.Level?.Id.ToString() ?? "",  
+                        JobPosition = employeeCard.Level?.JobPosition?.Id.ToString() ?? "", 
+                        StartWorkDate = employeeCard.StartWorkDate?.ToString("yyyy-MM-dd") ?? "",  
+                        Name = employeeCard.User?.Name ?? "", 
+                        TitleBefore = employeeCard.User?.Title_before ?? "",  
+                        TitleAfter = employeeCard.User?.Title_after ?? "", 
+                        Department = employeeCard.Department?.Id.ToString() ?? "", 
+                        Organization = employeeCard.Department?.Organization?.Id.ToString() ?? "", 
+                        ContractType = employeeCard.ContractType?.Id.ToString() ?? "", 
+                        WorkPercentage = employeeCard.WorkPercentage ?? 0,
+                        Surname = employeeCard.User?.Surname ?? "", 
+                        Location = employeeCard.Location?.Id.ToString() ?? "",  
+                        Archived = employeeCard.Archived,  
+                        EmploymentDuration = employeeCard.StartWorkDate.HasValue
+                            ? GetEmploymentDuration(employeeCard.StartWorkDate.Value, DateTime.Now)
+                            : "Neznáma doba zamestnania",
+                        MiddleName = employeeCard.User?.MiddleName ?? "" 
+                    };
+                }
+                catch (Exception e)
+                {
+                    return BadRequest(e);
+                }
+            }
+            else
+            {
+                employeeCardResponse = new EmployeeCardResponse
+                {
+                    EmployeeId = employeeCard.Id,
+                    Email = employeeCard.User.Email,
+                    Birthdate = employeeCard.Birthdate?.ToString("yyyy-MM-dd"),
+                    Position = employeeCard.Level?.Name ?? "Neznáma pozícia",
+                    StartWorkDate = employeeCard.StartWorkDate?.ToString("yyyy-MM-dd"),
+                    Name = employeeCard.User.Name,
+                    TitleBefore = employeeCard.User.Title_before,
+                    TitleAfter = employeeCard.User.Title_after,
+                    Department = employeeCard.Department?.Name ?? "Nezaradené oddelenie",
+                    Organization = employeeCard.Department?.Organization?.Name ?? "Neznáma organizácia",
+                    ContractType = employeeCard.ContractType?.Name ?? "Neznámy typ zmluvy",
+                    WorkPercentage = employeeCard.WorkPercentage,
+                    Surname = employeeCard.User.Surname,
+                    Location = employeeCard.Location?.Name ?? "Neznáma lokalita",
+                    Archived = employeeCard.Archived,
+                    EmploymentDuration = employeeCard.StartWorkDate.HasValue
+                ? GetEmploymentDuration(employeeCard.StartWorkDate.Value, DateTime.Now)
+                : "Neznáma doba zamestnania",
+                    MiddleName = employeeCard.User.MiddleName
+                };
+            }
             return Ok(employeeCardResponse);
         }
 

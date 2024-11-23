@@ -1,9 +1,11 @@
 ﻿using AGILE2024_BE.Data;
 using AGILE2024_BE.Models;
 using AGILE2024_BE.Models.Identity;
+using AGILE2024_BE.Models.Response;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace AGILE2024_BE.Controllers
 {
@@ -23,6 +25,21 @@ namespace AGILE2024_BE.Controllers
             this.roleManager = rm;
             this.dbContext = db;
         }
+        [HttpGet("GetAll")]
+        public async Task<IActionResult> GetAll()
+        {
+            var levels = await dbContext.Levels.Include(x=> x.JobPosition).ToListAsync();
+
+            var levelResponses = levels.Select(level => new LevelResponse
+            {
+                Id = level.Id.ToString(),
+                Name = level.Name,
+                JobPosition = level.JobPosition?.Id.ToString() ?? ""
+            }).ToList(); 
+
+            return Ok(levelResponses);
+        }
+
 
         [HttpGet("Get")]
         public async Task<IActionResult> Get(Guid jobPostionID)

@@ -6,6 +6,7 @@
         public string Email { get; set; }
         public string Birthdate { get; set; }
         public string Position { get; set; }
+        public string JobPosition { get; set; }
         public string StartWorkDate { get; set; }
         public string Name { get; set; }
         public string TitleBefore { get; set; }
