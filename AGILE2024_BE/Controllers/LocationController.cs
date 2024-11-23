@@ -252,5 +252,13 @@ namespace AGILE2024_BE.Controllers
 
             return Ok(new { message = "Location unarchived successfully" });
         }
+
+        [HttpGet("GetAllUnarchived")]
+        public async Task<IActionResult> GetAllUnarchived()
+        {
+            var result = await dbContext.Locations.Where(x => x.Archived == false).ToListAsync();
+
+            return Ok(result);
+        }
     }
 }

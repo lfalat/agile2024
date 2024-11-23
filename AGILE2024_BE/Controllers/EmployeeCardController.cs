@@ -28,10 +28,7 @@ namespace AGILE2024_BE.Controllers
         }
 
         [HttpGet("EmployeeCards")]
-        [Authorize(Roles = RolesDef.Veduci)]
         public async Task<IActionResult> EmployeeCards()
-
-
         {
             ExtendedIdentityUser? user = await userManager.FindByEmailAsync(User.Identity?.Name!);
             var superiorId = user.Id; 
@@ -73,5 +70,27 @@ namespace AGILE2024_BE.Controllers
 
             return Ok(employeeCards);
         }
+        }
+
+        [HttpPost("Deactivate/{userId}")]
+        public async Task<IActionResult> Deactivate(string userId)
+        {
+            var employeeCard = await dbContext.EmployeeCards.FirstAsync(x => x.User.Id == userId);
+
+            employeeCard.Archived =! employeeCard.Archived;
+
+            dbContext.EmployeeCards.Update(employeeCard);
+
+            await dbContext.SaveChangesAsync();
+
+            return Ok();
+        }
+
+        [HttpGet("GetAll")]
+        public async Task<IActionResult> GetAll()
+        {
+            var employeeCard = await dbContext.EmployeeCards.Include(x => x.User).ToListAsync();
+
+            return Ok(employeeCard);
     }
 }

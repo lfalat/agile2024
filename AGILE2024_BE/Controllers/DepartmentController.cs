@@ -439,5 +439,13 @@ namespace AGILE2024_BE.Controllers
             await dbContext.SaveChangesAsync();
             return Ok(new { message = "Oddelenie úspešne vymazané" });
         }
+
+        [HttpGet("GetAllUnarchived")]
+        public async Task<IActionResult> GetAllUnarchived()
+        {
+            var result = await dbContext.Departments.Where(x => x.Archived == false).ToListAsync();
+
+            return Ok(result);
+        }
     }
 }
