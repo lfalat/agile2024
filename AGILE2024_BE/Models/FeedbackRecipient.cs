@@ -12,6 +12,7 @@ namespace AGILE2024_BE.Models
         public required EmployeeCard employee { get; set; }
         public DateTime? recievedDate { get; set; }
         public required bool isRead { get; set; }
-
+        [ForeignKey(nameof(FeedbackRequestStatus) + "Id")]
+        public required FeedbackRequestStatus status { get; set; }
     }
 }
