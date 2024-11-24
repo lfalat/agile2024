@@ -4,6 +4,7 @@ using AGILE2024_BE.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AGILE2024_BE.Migrations
 {
     [DbContext(typeof(AgileDBContext))]
-    partial class AgileDBContextModelSnapshot : ModelSnapshot
+    [Migration("20241124153542_Sprint3_v8")]
+    partial class Sprint3_v8
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -144,6 +147,9 @@ namespace AGILE2024_BE.Migrations
 
                     b.Property<Guid>("FeedbackRecipientId")
                         .HasColumnType("char(36)");
+
+                    b.Property<DateTime>("answeredDate")
+                        .HasColumnType("datetime(6)");
 
                     b.Property<string>("text")
                         .IsRequired()

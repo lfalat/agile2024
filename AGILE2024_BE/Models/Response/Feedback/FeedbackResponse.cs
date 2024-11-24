@@ -9,10 +9,9 @@ namespace AGILE2024_BE.Models.Response.Feedback
         public required string title { get; set; }
         public required DateTime createDate { get; set; }
         public DateTime? sentAt { get; set; }
-        public required FeedbackRequestStatus status { get; set; }
         public DateTime? recievedDate { get; set; }
-        public required bool isRead { get; set; }
-        public List<FeedbackQuestionResponse> feedbackQuestions { get; set; }
-        public List<FeedbackRecipientResponse> feedbackRecipients { get; set; }
+        public required bool isRead { get; set; } = false;
+        public List<FeedbackQuestionResponse> feedbackQuestions { get; set; } = [];
+        public List<FeedbackRecipientResponse> feedbackRecipients { get; set; } = [];
     }
 }

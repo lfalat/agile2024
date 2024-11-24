@@ -2,7 +2,8 @@
 {
     public class FeedbackQuestionResponse
     {
-        public FeedbackQuestion FeedbackQuestion { get; set; }
-        public FeedbackAnswer FeedbackAnswer { get; set; }
+        public string id { get; set; }
+        public required string text { get; set; }
+        public string answer { get; set; }
     }
 }
