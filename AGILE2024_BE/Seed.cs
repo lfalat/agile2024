@@ -26,8 +26,8 @@ namespace AGILE2024_BE
                 };
                 foreach (var feedbackRequestStatus in feedbackRequestStatuses)
                 {
-                    var existingContractType = await context.ContractTypes
-                        .FirstOrDefaultAsync(ct => ct.Name == feedbackRequestStatus.description);
+                    var existingContractType = await context.FeedbackRequestStatuses
+                        .FirstOrDefaultAsync(ct => ct.description == feedbackRequestStatus.description);
 
                     if (existingContractType == null)
                     {
@@ -44,8 +44,8 @@ namespace AGILE2024_BE
                 };
                 foreach (var goalStatus in goalStatuses)
                 {
-                    var existingContractType = await context.ContractTypes
-                        .FirstOrDefaultAsync(ct => ct.Name == goalStatus.description);
+                    var existingContractType = await context.GoalStatuses
+                        .FirstOrDefaultAsync(ct => ct.description == goalStatus.description);
 
                     if (existingContractType == null)
                     {
@@ -60,8 +60,8 @@ namespace AGILE2024_BE
                 };
                 foreach (var goalCategory in goalCategories)
                 {
-                    var existingContractType = await context.ContractTypes
-                        .FirstOrDefaultAsync(ct => ct.Name == goalCategory.description);
+                    var existingContractType = await context.GoalCategory
+                        .FirstOrDefaultAsync(ct => ct.description == goalCategory.description);
 
                     if (existingContractType == null)
                     {
@@ -119,7 +119,7 @@ namespace AGILE2024_BE
                 ExtendedIdentityUser? admin = await _userManager.FindByEmailAsync("patrik@email.com");
                 if (admin == null)
                 {
-                    string[] userNames = { "patrik", "brano", "lukas", "michal", "alexandra", "sara"};
+                    string[] userNames = { "patrik", "brano", "lukas", "michal", "alexandra", "sara" };
                     string[] lastNames = { "balvan", "brano", "kišša", "ondrejka", "vojtasova", "papšova" };
 
                     for (int i = 0; i < userNames.Length; i++)
@@ -185,4 +185,3 @@ namespace AGILE2024_BE
         }
     }
 }
-

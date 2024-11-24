@@ -138,8 +138,12 @@ namespace AGILE2024_BE.Controllers
         [HttpGet("GetAllEmployees")]
         public async Task<IActionResult> GetAllEmployees()
         {
+            var employeesZamestnanec = await userManager.GetUsersInRoleAsync(RolesDef.Zamestnanec);
+            var employeesVeduci = await userManager.GetUsersInRoleAsync(RolesDef.Veduci);
+            var employees = employeesZamestnanec.Concat(employeesVeduci).ToList();
             var employeeCards = await dbContext.EmployeeCards
             .Include(ec => ec.User)
+            .Where(ec => employees.Contains(ec.User))
             .Select(ec => new EmployeeCardResponse
             {
                 EmployeeId = ec.Id,
