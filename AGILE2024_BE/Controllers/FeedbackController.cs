@@ -45,7 +45,7 @@ namespace AGILE2024_BE.Controllers
             FeedbackRequest feedbackRequest = new FeedbackRequest
             {
                 sender = await dbContext.EmployeeCards.FirstOrDefaultAsync(e => e.User == user),
-                title = "SV" + DateTime.Now.ToString(),
+                title = "SV" + DateTime.Now.ToString("yyyyMMddHHmmss"),
                 createDate = DateTime.Now
             };
             foreach (var question in feedbackData.questions)
