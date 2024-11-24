@@ -119,7 +119,7 @@ namespace AGILE2024_BE
                 ExtendedIdentityUser? admin = await _userManager.FindByEmailAsync("patrik@email.com");
                 if (admin == null)
                 {
-                    string[] userNames = { "patrik", "brano", "lukas", "michal", "alexandra", "sara" };
+                    string[] userNames = { "patrik", "brano", "lukas", "michal", "alexandra", "sara"};
                     string[] lastNames = { "balvan", "brano", "kišša", "ondrejka", "vojtasova", "papšova" };
 
                     for (int i = 0; i < userNames.Length; i++)

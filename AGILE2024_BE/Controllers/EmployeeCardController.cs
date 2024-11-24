@@ -18,7 +18,7 @@ namespace AGILE2024_BE.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = RolesDef.Spravca)]
+    //[Authorize(Roles = RolesDef.Spravca)]
     public class EmployeeCardController : ControllerBase
     {
         private UserManager<ExtendedIdentityUser> userManager;
@@ -133,6 +133,26 @@ namespace AGILE2024_BE.Controllers
             var employeeCard = await dbContext.EmployeeCards.Include(x => x.User).ToListAsync();
 
             return Ok(employeeCard);
+        }
+
+        [HttpGet("GetAllEmployees")]
+        public async Task<IActionResult> GetAllEmployees()
+        {
+            var employeeCards = await dbContext.EmployeeCards
+            .Include(ec => ec.User)
+            .Select(ec => new EmployeeCardResponse
+            {
+                EmployeeId = ec.Id,
+                Email = ec.User.Email,
+                Name = ec.User.Name ?? string.Empty,
+                TitleBefore = ec.User.Title_before ?? string.Empty,
+                TitleAfter = ec.User.Title_after ?? string.Empty,
+                Department = ec.Department.Name ?? "N/A",
+                Surname = ec.User.Surname ?? string.Empty,
+                MiddleName = ec.User.MiddleName
+            }).ToListAsync();
+
+            return Ok(employeeCards);
         }
     }
 }

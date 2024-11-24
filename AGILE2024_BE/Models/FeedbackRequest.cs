@@ -10,8 +10,5 @@ namespace AGILE2024_BE.Models
         public required EmployeeCard sender { get; set; }
         public required string title { get; set; }
         public required DateTime createDate { get; set; }
-        public DateTime? sentAt { get; set; }
-        [ForeignKey(nameof(FeedbackRequestStatus) + "Id")]
-        public required FeedbackRequestStatus status { get; set; }
     }
 }
