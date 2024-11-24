@@ -26,7 +26,7 @@ namespace AGILE2024_BE.Controllers
         }
 
         [HttpGet("Statuses")]
-        [Authorize(Roles = RolesDef.Veduci)]
+        [Authorize(Roles = RolesDef.Veduci + "," + RolesDef.Zamestnanec)]
         public async Task<IActionResult> Statuses()
         {
             var statuses = await dbContext.GoalStatuses.ToListAsync();

@@ -13,7 +13,7 @@ namespace AGILE2024_BE.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = RolesDef.Spravca)]
+    //[Authorize(Roles = RolesDef.Spravca)]
     public class DepartmentController : ControllerBase
     {
         private UserManager<ExtendedIdentityUser> userManager;
@@ -30,7 +30,7 @@ namespace AGILE2024_BE.Controllers
         }
 
         [HttpGet("Departments")]
-        [Authorize(Roles = RolesDef.Spravca)]
+        [Authorize(Roles = RolesDef.Spravca + ", " + RolesDef.Veduci + ", " + RolesDef.Zamestnanec)]
         public async Task<IActionResult> Departments()
         {
             var departments = await dbContext.Departments
@@ -110,15 +110,21 @@ namespace AGILE2024_BE.Controllers
                         return BadRequest($"Organizacia {createRequest.Organization} nexistuje.");
                     }
 
+                    string supString = createRequest.superior.ToString();
+
+                    var superior = await dbContext.Users
+                        .FirstOrDefaultAsync(o => o.Id == createRequest.superior.ToString());
+
+                    
+                    
                     var newDepartment = new Department
                     {
-                        //TODO Dorobiť vkladanie ID Usera
                         Id = Guid.NewGuid(),
                         Name = createRequest.Name,
                         Code = createRequest.Code,
                         Organization = organization,
                         Archived = createRequest.Archived,
-                        Superior = null
+                        Superior = superior,
                     };
                     dbContext.Departments.Add(newDepartment);
 
@@ -261,6 +267,14 @@ namespace AGILE2024_BE.Controllers
                     return NotFound("Oddelenie sa nenašlo");
                 }
 
+                var superior = await dbContext.Users
+                    .FirstOrDefaultAsync(s => s.Id == editRequest.SuperiorId);
+
+                if (superior == null && editRequest.SuperiorId != null)
+                {
+                    return BadRequest($"Vedúci oddelenia {editRequest.SuperiorId} neexistuje.");
+                }
+
                 var organization = await dbContext.Organizations
                     .FirstOrDefaultAsync(o => o.Id.ToString() == editRequest.Organization);
 
@@ -271,6 +285,7 @@ namespace AGILE2024_BE.Controllers
 
                 existingDepartment.Name = editRequest.Name;
                 existingDepartment.Code = editRequest.Code;
+                existingDepartment.Superior = superior;
                 existingDepartment.Organization = organization ?? existingDepartment.Organization; 
                 existingDepartment.Archived = editRequest.Archived;
 
@@ -359,11 +374,18 @@ namespace AGILE2024_BE.Controllers
             var department = await dbContext.Departments
         .Include(d => d.Organization)
         .Include(d => d.ParentDepartment)
+        .Include(d => d.Superior)
         .FirstOrDefaultAsync(d => d.Id == departmentId);
 
             if (department == null)
             {
                 return NotFound(new { message = "Oddelenie s týmto ID neexistuje." });
+            }
+            string superiorRole = "";
+            if (department.Superior != null)
+            {
+                var superiorRoles = await userManager.GetRolesAsync(department.Superior);
+                superiorRole = superiorRoles.FirstOrDefault() ?? "";
             }
 
             var childDepartments = await dbContext.Departments
@@ -376,6 +398,10 @@ namespace AGILE2024_BE.Controllers
                 Id = department.Id,
                 Name = department.Name,
                 Code = department.Code,
+                SuperiorId = department.Superior?.Id,
+                SuperiorName = department.Superior != null
+            ? $"{department.Superior.Name} {department.Superior.Surname}, {superiorRole}"
+            : null,
                 OrganizationId = department.Organization.Id,
                 OrganizationName = department.Organization?.Name,
                 Created = department.Created,

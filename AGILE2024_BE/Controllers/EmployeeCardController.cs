@@ -1,9 +1,10 @@
-﻿using AGILE2024_BE.Data;
+using AGILE2024_BE.Data;
 using AGILE2024_BE.Models;
 using AGILE2024_BE.Models.Identity;
 using AGILE2024_BE.Models.Requests;
 using AGILE2024_BE.Models.Requests.EmployeeCardRequests;
 using AGILE2024_BE.Models.Requests.JobPositionRequests;
+
 using AGILE2024_BE.Models.Response;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -12,6 +13,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 using System.Reflection.Emit;
 
 namespace AGILE2024_BE.Controllers
@@ -33,7 +35,7 @@ namespace AGILE2024_BE.Controllers
             this.roleManager = rm;
             this.dbContext = db;
         }
-
+        
         [HttpPost("Update")]
         [Authorize(Roles = RolesDef.Spravca)]
         public async Task<IActionResult> Update([FromBody] UpdateEmployeeCardRequest employeeCardRequest)
@@ -67,8 +69,9 @@ namespace AGILE2024_BE.Controllers
 
             return Ok();
         }
-
+        
         [HttpGet("EmployeeCards")]
+        //[Authorize(Roles = RolesDef.Veduci)]
         public async Task<IActionResult> EmployeeCards()
         {
             ExtendedIdentityUser? user = await userManager.FindByEmailAsync(User.Identity?.Name!);
@@ -112,7 +115,6 @@ namespace AGILE2024_BE.Controllers
             return Ok(employeeCards);
         }
 
-
         [HttpPost("Deactivate/{userId}")]
         public async Task<IActionResult> Deactivate(string userId)
         {
@@ -125,6 +127,39 @@ namespace AGILE2024_BE.Controllers
             await dbContext.SaveChangesAsync();
 
             return Ok();
+        }
+
+        [HttpGet("GetUserByEmployeeCard")]
+        public async Task<IActionResult> GetUserByEmployeeCard(string employeeCardId)
+        {
+            // Assuming you have a DbContext or repository to access EmployeeCard and User data
+            var employeeCard = await dbContext.EmployeeCards
+                .Include(ec => ec.User) // Include the related user
+                .FirstOrDefaultAsync(ec => ec.Id.ToString() == employeeCardId
+                );
+
+            if (employeeCard == null || employeeCard.User == null)
+            {
+                return NotFound("Employee card or user not found.");
+            }
+
+            // Get the user information from the User object associated with the EmployeeCard
+            var user = employeeCard.User;
+            var roles = await userManager.GetRolesAsync(user);
+
+            var userIdentityResponse = new UserIdentityResponse
+            {
+                id = user.Id,
+                Email = user.Email!,
+                FirstName = user.Name ?? string.Empty,
+                LastName = user.Surname ?? string.Empty,
+                TitleBefore = user.Title_before ?? string.Empty,
+                TitleAfter = user.Title_after ?? string.Empty,
+                Role = roles.FirstOrDefault(),
+                ProfilePicLink = user.ProfilePicLink
+            };
+
+            return Ok(userIdentityResponse);
         }
 
         [HttpGet("GetAll")]
@@ -154,5 +189,6 @@ namespace AGILE2024_BE.Controllers
 
             return Ok(employeeCards);
         }
+
     }
 }

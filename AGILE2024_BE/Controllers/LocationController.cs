@@ -16,7 +16,7 @@ namespace AGILE2024_BE.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = RolesDef.Spravca)]
+    
     public class LocationController : ControllerBase
     {
         private UserManager<ExtendedIdentityUser> userManager;
@@ -33,7 +33,7 @@ namespace AGILE2024_BE.Controllers
         }
 
         [HttpGet("Locations")]
-        [Authorize(Roles = RolesDef.Spravca)]
+        [Authorize(Roles = RolesDef.Spravca + ", " + RolesDef.Veduci + ", " + RolesDef.Zamestnanec)]
         public async Task<IActionResult> Locations()
         {
             var locations = await dbContext.Locations
