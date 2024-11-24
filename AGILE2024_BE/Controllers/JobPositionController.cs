@@ -181,7 +181,10 @@ namespace AGILE2024_BE.Controllers
         [Authorize(Roles = RolesDef.Spravca + ", " + RolesDef.Veduci + ", " + RolesDef.Zamestnanec)]
         public async Task<IActionResult> GetAllAsync()
         {
-            var data = await dbContext.JobPositions.ToListAsync();
+            var data = await dbContext.JobPositions
+                                        .Include(jp => jp.Levels)
+                                        .Include(jp => jp.Organizations)
+                                        .ToListAsync();
             return Ok(data);
         }
 
@@ -204,9 +207,14 @@ namespace AGILE2024_BE.Controllers
 
         [HttpDelete("Delete")]
         [Authorize(Roles = RolesDef.Spravca)]
-        public async Task<IActionResult> Delete(Guid id)
+        public async Task<IActionResult> Delete(string id)
         {
-            var position = await dbContext.JobPositions.FindAsync(id);
+            Guid guid = Guid.Parse(id);
+            var position = await dbContext.JobPositions
+                        .Include(pos => pos.Levels)
+                            .ThenInclude(l => l.EmployeeCards)
+                        .Include(pos => pos.Organizations)
+                        .SingleOrDefaultAsync(pos => pos.Id == guid);
             if (position == null)
             {
                 return BadRequest("Pozícia práce nebola nájdená");

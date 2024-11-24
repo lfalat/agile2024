@@ -13,7 +13,7 @@ namespace AGILE2024_BE.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    //[Authorize(Roles = RolesDef.Spravca)]
+    [Authorize(Roles = RolesDef.Spravca)]
     public class DepartmentController : ControllerBase
     {
         private UserManager<ExtendedIdentityUser> userManager;
@@ -30,7 +30,7 @@ namespace AGILE2024_BE.Controllers
         }
 
         [HttpGet("Departments")]
-        [Authorize(Roles = RolesDef.Spravca + ", " + RolesDef.Veduci + ", " + RolesDef.Zamestnanec)]
+        [Authorize(Roles = RolesDef.Spravca)]
         public async Task<IActionResult> Departments()
         {
             var departments = await dbContext.Departments
@@ -110,6 +110,8 @@ namespace AGILE2024_BE.Controllers
                         return BadRequest($"Organizacia {createRequest.Organization} nexistuje.");
                     }
 
+<<<<<<< HEAD
+=======
                     string supString = createRequest.superior.ToString();
 
                     var superior = await dbContext.Users
@@ -117,6 +119,7 @@ namespace AGILE2024_BE.Controllers
 
                     
                     
+>>>>>>> 2834ae1 (doplnenie veduceho oddelenia, doplnenie cielov)
                     var newDepartment = new Department
                     {
                         Id = Guid.NewGuid(),
@@ -124,7 +127,11 @@ namespace AGILE2024_BE.Controllers
                         Code = createRequest.Code,
                         Organization = organization,
                         Archived = createRequest.Archived,
+<<<<<<< HEAD
+                        Superior = null
+=======
                         Superior = superior,
+>>>>>>> 2834ae1 (doplnenie veduceho oddelenia, doplnenie cielov)
                     };
                     dbContext.Departments.Add(newDepartment);
 
@@ -464,14 +471,6 @@ namespace AGILE2024_BE.Controllers
             dbContext.Departments.Remove(department);
             await dbContext.SaveChangesAsync();
             return Ok(new { message = "Oddelenie úspešne vymazané" });
-        }
-
-        [HttpGet("GetAllUnarchived")]
-        public async Task<IActionResult> GetAllUnarchived()
-        {
-            var result = await dbContext.Departments.Where(x => x.Archived == false).ToListAsync();
-
-            return Ok(result);
         }
     }
 }

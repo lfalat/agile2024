@@ -1,4 +1,5 @@
 ﻿using AGILE2024_BE.Data;
+using AGILE2024_BE.Models;
 using AGILE2024_BE.Models.Identity;
 using AGILE2024_BE.Models.Response;
 using Microsoft.AspNetCore.Http;
@@ -43,7 +44,7 @@ namespace AGILE2024_BE.Controllers
         [HttpGet("Get")]
         public async Task<IActionResult> Get(Guid jobPostionID)
         {
-            var levels = dbContext.Levels.Where( x => x.JobPosition.Id == jobPostionID ).ToList();
+            var levels = await dbContext.Levels.Where( x => x.JobPosition.Id == jobPostionID ).ToListAsync();
             return Ok(levels);
         }
     }

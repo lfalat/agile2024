@@ -1,18 +1,26 @@
-﻿using AGILE2024_BE.Data;
+using AGILE2024_BE.Data;
+using AGILE2024_BE.Models;
 using AGILE2024_BE.Models.Identity;
+using AGILE2024_BE.Models.Requests;
 using AGILE2024_BE.Models.Requests.EmployeeCardRequests;
+using AGILE2024_BE.Models.Requests.JobPositionRequests;
+
 using AGILE2024_BE.Models.Response;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using System.Reflection.Emit;
 
 namespace AGILE2024_BE.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    //[Authorize(Roles = RolesDef.Spravca)]
     public class EmployeeCardController : ControllerBase
     {
         private UserManager<ExtendedIdentityUser> userManager;
@@ -27,12 +35,44 @@ namespace AGILE2024_BE.Controllers
             this.roleManager = rm;
             this.dbContext = db;
         }
+        
+        [HttpPost("Update")]
+        [Authorize(Roles = RolesDef.Spravca)]
+        public async Task<IActionResult> Update([FromBody] UpdateEmployeeCardRequest employeeCardRequest)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
 
+            var user = await dbContext.Users.FindAsync(employeeCardRequest.UserId);
+            var employeeCard = await dbContext.EmployeeCards
+                .FindAsync(employeeCardRequest.Id);
+
+            var level = await dbContext.Levels.FindAsync(employeeCardRequest.Level);
+            var location = await dbContext.Locations.FindAsync(employeeCardRequest.Location);
+            var department = await dbContext.Departments.FindAsync(employeeCardRequest.Department);
+            var contractType = await dbContext.ContractTypes.FindAsync(employeeCardRequest.ContractType);
+
+            employeeCard.Birthdate = DateTime.Parse(employeeCardRequest.Birth);
+            employeeCard.ContractType = contractType;
+            employeeCard.Location = location;
+            employeeCard.Department = department;
+            employeeCard.WorkPercentage = employeeCardRequest.WorkTime;
+            employeeCard.Level = level;
+            employeeCard.StartWorkDate = DateTime.Parse(employeeCardRequest.StartWorkDate);
+            employeeCard.LastEdited = DateTime.Now;
+
+            dbContext.EmployeeCards.Update(employeeCard);
+
+            await dbContext.SaveChangesAsync();
+
+            return Ok();
+        }
+        
         [HttpGet("EmployeeCards")]
-        [Authorize(Roles = RolesDef.Veduci)]
+        //[Authorize(Roles = RolesDef.Veduci)]
         public async Task<IActionResult> EmployeeCards()
-
-
         {
             ExtendedIdentityUser? user = await userManager.FindByEmailAsync(User.Identity?.Name!);
             var superiorId = user.Id;
@@ -75,32 +115,12 @@ namespace AGILE2024_BE.Controllers
             return Ok(employeeCards);
         }
 
-        [HttpPost("Update")]
-        [Authorize(Roles = RolesDef.Spravca)]
-        public async Task<IActionResult> Update([FromBody] UpdateEmployeeCardRequest employeeCardRequest)
+        [HttpPost("Deactivate/{userId}")]
+        public async Task<IActionResult> Deactivate(string userId)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
+            var employeeCard = await dbContext.EmployeeCards.FirstAsync(x => x.User.Id == userId);
 
-            var user = await dbContext.Users.FindAsync(employeeCardRequest.UserId);
-            var employeeCard = await dbContext.EmployeeCards
-                .FindAsync(employeeCardRequest.Id);
-
-            var level = await dbContext.Levels.FindAsync(employeeCardRequest.Level);
-            var location = await dbContext.Locations.FindAsync(employeeCardRequest.Location);
-            var department = await dbContext.Departments.FindAsync(employeeCardRequest.Department);
-            var contractType = await dbContext.ContractTypes.FindAsync(employeeCardRequest.ContractType);
-
-            employeeCard.Birthdate = DateTime.Parse(employeeCardRequest.Birth);
-            employeeCard.ContractType = contractType;
-            employeeCard.Location = location;
-            employeeCard.Department = department;
-            employeeCard.WorkPercentage = employeeCardRequest.WorkTime;
-            employeeCard.Level = level;
-            employeeCard.StartWorkDate = DateTime.Parse(employeeCardRequest.StartWorkDate);
-            employeeCard.LastEdited = DateTime.Now;
+            employeeCard.Archived = !employeeCard.Archived;
 
             dbContext.EmployeeCards.Update(employeeCard);
 
@@ -140,6 +160,34 @@ namespace AGILE2024_BE.Controllers
             };
 
             return Ok(userIdentityResponse);
+        }
+
+        [HttpGet("GetAll")]
+        public async Task<IActionResult> GetAll()
+        {
+            var employeeCard = await dbContext.EmployeeCards.Include(x => x.User).ToListAsync();
+
+            return Ok(employeeCard);
+        }
+
+        [HttpGet("GetAllEmployees")]
+        public async Task<IActionResult> GetAllEmployees()
+        {
+            var employeeCards = await dbContext.EmployeeCards
+            .Include(ec => ec.User)
+            .Select(ec => new EmployeeCardResponse
+            {
+                EmployeeId = ec.Id,
+                Email = ec.User.Email,
+                Name = ec.User.Name ?? string.Empty,
+                TitleBefore = ec.User.Title_before ?? string.Empty,
+                TitleAfter = ec.User.Title_after ?? string.Empty,
+                Department = ec.Department.Name ?? "N/A",
+                Surname = ec.User.Surname ?? string.Empty,
+                MiddleName = ec.User.MiddleName
+            }).ToListAsync();
+
+            return Ok(employeeCards);
         }
 
     }

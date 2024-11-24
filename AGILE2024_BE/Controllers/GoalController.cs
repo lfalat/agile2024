@@ -3,6 +3,7 @@ using AGILE2024_BE.Models;
 using AGILE2024_BE.Models.Identity;
 using AGILE2024_BE.Models.Requests.GoalRequests;
 using AGILE2024_BE.Models.Response;
+
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
@@ -36,7 +37,6 @@ namespace AGILE2024_BE.Controllers
             {
                 ExtendedIdentityUser? user = await userManager.FindByEmailAsync(User.Identity?.Name!);
 
-
                 /*var goals1 = await dbContext.Goals
                     .Include(g => g.employee)
                     .ThenInclude(e => e.User)
@@ -56,6 +56,7 @@ namespace AGILE2024_BE.Controllers
                         g.finishedDate,
                         g.fullfilmentRate,
                         g.dueDate,
+
                         categoryDescription = g.category.description,
                         statusDescription = g.status.description,
                         AssignedEmployees = dbContext.GoalAssignments
@@ -92,16 +93,17 @@ namespace AGILE2024_BE.Controllers
         {
             try
             {
-
                 ExtendedIdentityUser? user = await userManager.FindByEmailAsync(User.Identity?.Name!);
                 if (user == null)
                 {
                     return Unauthorized("User not found.");
                 }
+
                 if (request.EmployeeIds == null || !request.EmployeeIds.Any())
                 {
                     return BadRequest("At least one employee must be assigned to the goal.");
                 }
+
                 var employeeCard = await dbContext.EmployeeCards
                     .FirstOrDefaultAsync(ec => ec.User.Id == user.Id);
                 if (employeeCard == null)
@@ -185,6 +187,7 @@ namespace AGILE2024_BE.Controllers
                     return Unauthorized("Employee card not found for the logged-in user.");
                 }
 
+
                 var goal = await dbContext.Goals
                     .Include(g => g.category)
                     .Include(g => g.status)
@@ -205,11 +208,13 @@ namespace AGILE2024_BE.Controllers
                 }
 
                 var goalStatus = await dbContext.GoalStatuses
+
                     .FirstOrDefaultAsync(s => s.id == request.StatusId);
 
                 if (goalStatus == null)
                 {
                     return BadRequest($"Goal status {request.StatusId} does not exist.");
+
                 }
 
                 goal.name = request.Name;
@@ -258,6 +263,7 @@ namespace AGILE2024_BE.Controllers
                         }
                     }
                     await dbContext.SaveChangesAsync();
+
                 }
 
                 return Ok(new { message = "Goal updated successfully.", goalId = goal.id });
@@ -328,8 +334,7 @@ namespace AGILE2024_BE.Controllers
                 dbContext.Goals.Update(goal);
                 await dbContext.SaveChangesAsync();
 
-                
-
+           
                 return Ok(new { message = "Goal updated successfully.", goalId = goal.id });
             }
             catch (Exception ex)
@@ -337,6 +342,7 @@ namespace AGILE2024_BE.Controllers
                 return StatusCode(500, "An error occurred while updating the goal.");
             }
         }
+
 
         [HttpDelete("Delete/{goalId}")]
         [Authorize(Roles = RolesDef.Veduci)]
@@ -490,7 +496,5 @@ namespace AGILE2024_BE.Controllers
 
             return Ok(departmentResponse);
         }
-
-
     }
 }
