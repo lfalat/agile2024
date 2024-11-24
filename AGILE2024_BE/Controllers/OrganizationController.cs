@@ -136,16 +136,9 @@ namespace AGILE2024_BE.Controllers
                 return NotFound($"Organizácia s ID {id} nebola nájdená.");
             }
 
-            var location = await dbContext.Locations.FirstOrDefaultAsync(loc => loc.Id.ToString() == registerOrganizationRequest.Location);
-            if (location == null)
-            {
-                return NotFound($"Lokalita s ID {registerOrganizationRequest.Location} nebola nájdená.");
-            }
-
             organization.Code = registerOrganizationRequest.Code;
             organization.Name = registerOrganizationRequest.Name;
             organization.LastEdited = DateTime.Now;
-            organization.Location = location;
 
             dbContext.Update(organization);
 
@@ -229,22 +222,10 @@ namespace AGILE2024_BE.Controllers
                 return BadRequest("Názov a kód sú povinné.");
             }
 
-            if (string.IsNullOrEmpty(registerRequest.Location))
-            {
-                return BadRequest("Lokalita je povinná.");
-            }
-
-            var location = await dbContext.Locations.FirstOrDefaultAsync(loc => loc.Id.ToString() == registerRequest.Location);
-            if (location == null)
-            {
-                return BadRequest("Neplatné ID lokality.");
-            }
-
             Organization organization = new Organization
             {
                 Name = registerRequest.Name,
                 Code = registerRequest.Code,
-                Location = location,
                 Created = DateTime.Now,
                 LastEdited = DateTime.Now,
                 Archived = false
