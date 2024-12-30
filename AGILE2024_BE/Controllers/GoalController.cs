@@ -234,15 +234,18 @@ namespace AGILE2024_BE.Controllers
                     goal.finishedDate = request.FinishedDate;
                 }
 
+                // Update the goal in the database
                 dbContext.Goals.Update(goal);
                 await dbContext.SaveChangesAsync();
 
-                // ak by sa dali meniť aj zamestnanci
-                var existingAssignments = dbContext.GoalAssignments.Where(ga => ga.goal.id.ToString() == request.GoalCategoryId);
+                // Remove all existing assignments for the goal before adding new ones
+                var existingAssignments = dbContext.GoalAssignments
+                    .Where(ga => ga.goal.id == goal.id);
+
                 dbContext.GoalAssignments.RemoveRange(existingAssignments);
                 await dbContext.SaveChangesAsync();
 
-                // Reassign the employees if employee IDs are provided
+                // Reassign the new employees if employee IDs are provided
                 if (request.EmployeeIds != null && request.EmployeeIds.Any())
                 {
                     foreach (var employeeId in request.EmployeeIds)
@@ -263,7 +266,6 @@ namespace AGILE2024_BE.Controllers
                         }
                     }
                     await dbContext.SaveChangesAsync();
-
                 }
 
                 return Ok(new { message = "Goal updated successfully.", goalId = goal.id });
