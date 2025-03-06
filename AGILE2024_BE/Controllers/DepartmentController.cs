@@ -473,5 +473,52 @@ namespace AGILE2024_BE.Controllers
 
             return Ok(result);
         }
+
+        [HttpGet("DepartmentsWithEmployeeCount")]
+        [Authorize(Roles = RolesDef.Spravca + ", " + RolesDef.Veduci + ", " + RolesDef.Zamestnanec)]
+        public async Task<IActionResult> GetDepartmentsWithEmployeeCount()
+        {
+            try
+            {
+                var departments = await dbContext.Departments
+                    .Include(d => d.Organization)
+                    .Include(d => d.ParentDepartment)
+                    .ToListAsync();
+
+                var employeeRoleId = await dbContext.Roles
+                    .Where(r => r.Name == "Zamestnanec")
+                    .Select(r => r.Id)
+                    .FirstOrDefaultAsync();
+
+
+
+                var departmentsWithEmployeeCount = new List<object>();
+
+                foreach (var department in departments)
+                {
+                    var employeeCount = await dbContext.EmployeeCards
+                        .Where(e => e.Department.Id == department.Id)
+                        .Where(e => dbContext.UserRoles
+                    .Any(ur => ur.UserId == e.User.Id && ur.RoleId == employeeRoleId))
+                .CountAsync();
+
+                    departmentsWithEmployeeCount.Add(new
+                    {
+                        department.Id,
+                        department.Name,
+                        department.Code,
+                        EmployeeCount = employeeCount
+                    });
+                }
+
+                return Ok(departmentsWithEmployeeCount);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine(ex);
+                return StatusCode(StatusCodes.Status500InternalServerError, "Error fetching departments with employee count.");
+            }
+        }
+
     }
 }
