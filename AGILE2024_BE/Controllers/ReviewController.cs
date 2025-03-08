@@ -143,5 +143,56 @@ namespace AGILE2024_BE.Controllers
             return Ok(groupedReviews);
         }
 
+
+
+        [HttpGet("MyReviews")]
+        [Authorize(Roles = RolesDef.Zamestnanec)]
+        public async Task<IActionResult> GetEmployeeReviews()
+        {
+            ExtendedIdentityUser? user = await userManager.FindByEmailAsync(User.Identity?.Name!);
+
+            var loggedEmployee = await dbContext.EmployeeCards
+                .Include(ec => ec.User)
+                .Where(ec => ec.User.Id == user.Id).FirstOrDefaultAsync();
+
+
+            if (loggedEmployee == null)
+                return NotFound("Zamestnanec nenájdený.");
+
+
+            var reviewRecipients = await dbContext.ReviewRecipents
+                    .Include(rr => rr.review)
+                    .Include(rr => rr.goalAssignment)
+                        .ThenInclude(ga => ga.employee)
+                        .ThenInclude(emp => emp.User)
+                    .Where(rr => rr.goalAssignment.employee.Id == loggedEmployee.Id)
+                    .ToListAsync();
+
+            if (!reviewRecipients.Any())
+                return NotFound("Neboli nájdené žiadne posudky pre tohto zamestnanca.");
+
+            var employeeReviews = reviewRecipients
+                .GroupBy(rr => rr.review.id)
+                .Select(group => new
+                {
+                    id = group.Key,
+                    ReviewId = group.Key,
+                    ReviewName = $"Posudok č. PC{group.FirstOrDefault()?.review.counter:D8}",
+                    Status = group.FirstOrDefault()?.review.endDate.HasValue == true ? "Dokončený" : "Prebieha",
+                    AssignedEmployees = new
+                    {
+                        id = loggedEmployee.Id,
+                        name = loggedEmployee.User.Name,
+                        surname = loggedEmployee.User.Surname
+                    },
+                    CreatedAt = group.FirstOrDefault()?.review.createDate,
+                    CompletedAt = group.FirstOrDefault()?.review.endDate
+                })
+                .ToList();
+
+            return Ok(employeeReviews);
+        }
+
+
     }
 }
