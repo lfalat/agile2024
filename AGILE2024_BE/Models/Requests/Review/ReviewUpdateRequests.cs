@@ -4,5 +4,7 @@
     {
         public string EmployeeEndDate { get; set; }
         public string SuperiorEndDate { get; set; }
+
+        public string Action { get; set; }
     }
 }

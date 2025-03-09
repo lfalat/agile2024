@@ -215,7 +215,10 @@ namespace AGILE2024_BE.Controllers
                 {
                     review.superiorEndDate = DateTime.Parse(request.SuperiorEndDate);
                 }
-                review.endDate = DateTime.UtcNow;
+                if (request.Action == "finish")
+                {
+                    review.endDate = DateTime.UtcNow;
+                }
                 dbContext.Reviews.Update(review);
                 await dbContext.SaveChangesAsync();
 
