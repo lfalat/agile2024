@@ -100,7 +100,12 @@ namespace AGILE2024_BE.Controllers
                 review = review,
                 goalAssignment = ga,
                 superiorDescription = null,
-                employeeDescription = null
+                employeeDescription = null,
+                isSavedSuperiorDesc = false,
+                isSavedEmployeeDesc = false,
+                isSentSuperiorDesc = false,
+                isSentEmployeeDesc = false,
+
             }).ToList();
 
             dbContext.ReviewRecipents.AddRange(reviewRecipients);
@@ -223,17 +228,19 @@ namespace AGILE2024_BE.Controllers
         }
 
 
-        [HttpGet("GetEmployeeReviewText/{reviewId}/{employeeId}")]
-        public async Task<IActionResult> GetEmployeeReviewText(Guid reviewId, Guid employeeId)
+        [HttpGet("GetReviewText/{userId}/{reviewId}/{employeeId}")]
+        public async Task<IActionResult> GetReviewText(Guid userId, Guid reviewId, Guid employeeId)
         {
             try
             {
+                var userRoleName = await GetUserRoleAsync(userId);
+
+                bool isSuperior = userRoleName == "Vedúci zamestnanec";
+
                 var reviewRecipients = await dbContext.ReviewRecipents
                     .Include(rr => rr.review)
                     .Include(rr => rr.goalAssignment)
                     .ThenInclude(g => g.goal)
-                    //.ThenInclude(ga => ga.employee)
-                    //.ThenInclude(u => u.User)
                     .Where(rr => rr.review.id == reviewId && rr.goalAssignment.employee.Id == employeeId)
                     .ToListAsync();
 
@@ -242,28 +249,29 @@ namespace AGILE2024_BE.Controllers
                     return NotFound("No review records found for the selected employee in this review.");
                 }
 
-                var employeeTexts = reviewRecipients.Select(rr => new
+                
+                var reviewTexts = reviewRecipients.Select(rr => new
                 {
                     reviewRecipientId = rr.id,
                     reviewId = rr.review.id,
                     goalId = rr.goalAssignment.goal.id,
                     goalName = rr.goalAssignment.goal.name,
-                    //employeeId = rr.goalAssignment.employee.Id,
-                    //employeeName = rr.goalAssignment.employee.User.Name + " " + rr.goalAssignment.employee.User.Surname,
-                    employeeDescription = rr.employeeDescription ?? " ",
-                    superiorDescription = rr.superiorDescription ?? " "
+
+                    employeeDescription = isSuperior
+                    ? (rr.isSentEmployeeDesc ? rr.employeeDescription ?? " " : " ")
+                    : (rr.isSavedEmployeeDesc || rr.isSentEmployeeDesc ? rr.employeeDescription ?? " " : " "),
+                    superiorDescription = isSuperior
+                    ? (rr.isSavedSuperiorDesc || rr.isSentSuperiorDesc ? rr.superiorDescription ?? " " : " ")
+                    : (rr.isSentSuperiorDesc ? rr.superiorDescription ?? " " : " ")
                 }).ToList();
 
-                return Ok(employeeTexts);
+                return Ok(reviewTexts);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, "An error occurred while fetching the employee review text.");
+                return StatusCode(500, "An error occurred while fetching the review text.");
             }
         }
-
-
-
 
         [HttpGet("MyReviews")]
         [Authorize(Roles = RolesDef.Zamestnanec)]
@@ -312,6 +320,128 @@ namespace AGILE2024_BE.Controllers
 
             return Ok(employeeReviews);
         }
+
+        
+
+        [HttpPut("UpdateDescription/{userId}/{reviewId}/{goalId}")]
+        public async Task<IActionResult> UpdateDescription(Guid userId, Guid reviewId, Guid goalId, [FromBody] UpdateDescriptionRequest request)
+        {
+            try
+            {
+                var userRoleName = await GetUserRoleAsync(userId);
+
+                bool isSuperior = userRoleName == "Vedúci zamestnanec";
+                var reviewRecipient = await dbContext.ReviewRecipents
+                    .Include(rr => rr.goalAssignment)
+                    .FirstOrDefaultAsync(rr => rr.review.id == reviewId && rr.goalAssignment.goal.id == goalId);
+
+                if (reviewRecipient == null)
+                {
+                    return NotFound("Review recipient not found for this goal.");
+                }
+
+                // Ak je superiorDescription
+                if (isSuperior)
+                {
+                    reviewRecipient.superiorDescription = request.SuperiorDescription;
+                    reviewRecipient.isSavedSuperiorDesc = true;
+                }
+                // Ak je employeeDescription
+                else if (!isSuperior)
+                {
+                    reviewRecipient.employeeDescription = request.EmployeeDescription;
+                    reviewRecipient.isSavedEmployeeDesc = true;
+                }
+                else
+                {
+                    return BadRequest("Invalid description type.");
+                }
+
+                dbContext.ReviewRecipents.Update(reviewRecipient);
+                await dbContext.SaveChangesAsync();
+
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An error occurred while updating the description.");
+            }
+        }
+
+        [HttpPut("SendDescription/{userId}/{reviewId}/{goalId}")]
+        public async Task<IActionResult> SendDescription(Guid userId, Guid reviewId, Guid goalId, [FromBody] UpdateDescriptionRequest request)
+        {
+            try
+            {
+                var userRoleName = await GetUserRoleAsync(userId);
+
+                bool isSuperior = userRoleName == "Vedúci zamestnanec";
+
+                var reviewRecipient = await dbContext.ReviewRecipents
+                    .Include(rr => rr.goalAssignment)
+                    .FirstOrDefaultAsync(rr => rr.review.id == reviewId && rr.goalAssignment.goal.id == goalId);
+
+                if (reviewRecipient == null)
+                {
+                    return NotFound("Review recipient not found for this goal.");
+                }
+
+                if (isSuperior)
+                {
+                    reviewRecipient.superiorDescription = request.SuperiorDescription;
+                    reviewRecipient.isSentSuperiorDesc = true;
+                }
+                // Ak je employeeDescription
+                else if (!isSuperior)
+                {
+                    reviewRecipient.employeeDescription = request.EmployeeDescription;
+                    reviewRecipient.isSentEmployeeDesc = true;
+                }
+                else
+                {
+                    return BadRequest("Invalid description type.");
+                }
+
+                dbContext.ReviewRecipents.Update(reviewRecipient);
+                await dbContext.SaveChangesAsync();
+
+                return Ok(new { message = "Descriptions sent successfully" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An error occurred while sending the descriptions.");
+            }
+        }
+
+        private async Task<string> GetUserRoleAsync(Guid userId)
+        {
+            var user = await dbContext.Users
+                .FirstOrDefaultAsync(u => u.Id == userId.ToString());
+
+            if (user == null)
+            {
+                throw new Exception("User not found");
+            }
+
+            var userRoleId = await dbContext.UserRoles
+                .Where(ur => ur.UserId == userId.ToString())
+                .Select(ur => ur.RoleId)
+                .FirstOrDefaultAsync();
+
+            var userRoleName = await dbContext.Roles
+                .Where(r => r.Id == userRoleId)
+                .Select(r => r.Name)
+                .FirstOrDefaultAsync();
+
+            return userRoleName;
+        }
+
+        public class UpdateDescriptionRequest
+        {
+            public string EmployeeDescription { get; set; }
+            public string SuperiorDescription { get; set; }
+        }
+
 
 
     }
