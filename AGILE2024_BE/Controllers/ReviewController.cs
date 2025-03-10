@@ -94,21 +94,44 @@ namespace AGILE2024_BE.Controllers
                 return BadRequest("No GoalAssignments found for the provided employee IDs.");
             }
 
-            var reviewRecipients = goalAssignments.Select(ga => new ReviewRecipient
-            {
-                id = Guid.NewGuid(),
-                review = review,
-                goalAssignment = ga,
-                superiorDescription = null,
-                employeeDescription = null,
-                isSavedSuperiorDesc = false,
-                isSavedEmployeeDesc = false,
-                isSentSuperiorDesc = false,
-                isSentEmployeeDesc = false,
+            var reviewRecipients = new List<ReviewRecipient>();
+            var reviewQuestions = new List<ReviewQuestion>();
 
-            }).ToList();
+            foreach (var ga in goalAssignments)
+            {
+                var reviewRecipient = new ReviewRecipient
+                {
+                    id = Guid.NewGuid(),
+                    review = review,
+                    goalAssignment = ga,
+                    superiorDescription = null,
+                    employeeDescription = null,
+                    isSavedSuperiorDesc = false,
+                    isSavedEmployeeDesc = false,
+                    isSentSuperiorDesc = false,
+                    isSentEmployeeDesc = false,
+                };
+
+                reviewRecipients.Add(reviewRecipient);
+
+                var reviewQuestion = new ReviewQuestion
+                {
+                    id = Guid.NewGuid(),
+                    goalAssignment = reviewRecipient,
+                    superiorDescription = null,
+                    employeeDescription = null,
+                    isSavedSuperiorDesc = false,
+                    isSavedEmployeeDesc = false,
+                    isSentSuperiorDesc = false,
+                    isSentEmployeeDesc = false,
+                };
+
+                reviewQuestions.Add(reviewQuestion);
+            }
+
 
             dbContext.ReviewRecipents.AddRange(reviewRecipients);
+            dbContext.ReviewQuestions.AddRange(reviewQuestions);
             await dbContext.SaveChangesAsync();
 
             return Ok(new { message = "Review created successfully" });
@@ -236,15 +259,16 @@ namespace AGILE2024_BE.Controllers
         {
             try
             {
+                /*
                 var userRoleName = await GetUserRoleAsync(userId);
-
                 bool isSuperior = userRoleName == "Vedúci zamestnanec";
 
+                
                 var reviewRecipients = await dbContext.ReviewRecipents
                     .Include(rr => rr.review)
                     .Include(rr => rr.goalAssignment)
-                    .ThenInclude(g => g.goal)
-                    .Where(rr => rr.review.id == reviewId && rr.goalAssignment.employee.Id == employeeId)
+                        .ThenInclude(g => g.goal)
+                     .Where(rr => rr.review.id == reviewId && rr.goalAssignment.employee.Id == employeeId)
                     .ToListAsync();
 
                 if (!reviewRecipients.Any())
@@ -269,6 +293,100 @@ namespace AGILE2024_BE.Controllers
                 }).ToList();
 
                 return Ok(reviewTexts);
+                */
+                //vies co moze byt aj problem? to ze niesu tie questions vytvorene v databaze
+
+                var userRoleName = await GetUserRoleAsync(userId);
+                bool isSuperior = userRoleName == "Vedúci zamestnanec";
+
+                var reviewRecipients = await dbContext.ReviewRecipents
+                    .Include(rr => rr.goalAssignment)
+                        .ThenInclude(ga => ga.goal)
+                    .Include(rr => rr.review)
+                    .Where(rr => rr.review.id == reviewId && rr.goalAssignment.employee.Id == employeeId)
+                        .ToListAsync();
+
+                if (reviewRecipients == null)
+                {
+                    return NotFound("ReviewRecipient not found.");
+                }
+
+                //var reviewQuestion = await dbContext.ReviewQuestions
+                //    .FirstOrDefaultAsync(rq => rq.goalAssignment.id == reviewRecipient.id);
+
+                // Optional: Load all related ReviewQuestions for these recipients
+                var recipientIds = reviewRecipients.Select(rr => rr.id).ToList();
+
+                var reviewQuestions = await dbContext.ReviewQuestions
+                    .Where(rq => recipientIds.Contains(rq.goalAssignment.id))
+                    .ToListAsync();
+
+                if (reviewQuestions == null)
+                {
+                    return NotFound("reviewQuestion not found.");
+                }
+
+                var response = reviewRecipients.Select(rr =>
+                {
+                    var reviewQuestion = reviewQuestions.FirstOrDefault(rq => rq.goalAssignment.id == rr.id);
+
+                    return new
+                    {
+                        reviewRecipientId = rr.id,
+                        reviewId = rr.review.id,
+                        goalId = rr.goalAssignment.goal.id,
+                        goalName = rr.goalAssignment.goal.name,
+
+                        employeeRecDescription = isSuperior
+                            ? (rr.isSentEmployeeDesc ? rr.employeeDescription ?? " " : " ")
+                            : (rr.isSavedEmployeeDesc || rr.isSentEmployeeDesc ? rr.employeeDescription ?? " " : " "),
+
+                        superiorRecDescription = isSuperior
+                            ? (rr.isSavedSuperiorDesc || rr.isSentSuperiorDesc ? rr.superiorDescription ?? " " : " ")
+                            : (rr.isSentSuperiorDesc ? rr.superiorDescription ?? " " : " "),
+
+                        employeeQuestionDescription = reviewQuestion != null
+                            ? (isSuperior
+                                ? (reviewQuestion.isSentEmployeeDesc ? reviewQuestion.employeeDescription ?? " " : " ")
+                                : (reviewQuestion.isSavedEmployeeDesc || reviewQuestion.isSentEmployeeDesc ? reviewQuestion.employeeDescription ?? " " : " "))
+                            : " ",
+
+                        superiorQuestionDescription = reviewQuestion != null
+                            ? (isSuperior
+                                ? (reviewQuestion.isSavedSuperiorDesc || reviewQuestion.isSentSuperiorDesc ? reviewQuestion.superiorDescription ?? " " : " ")
+                                : (reviewQuestion.isSentSuperiorDesc ? reviewQuestion.superiorDescription ?? " " : " "))
+                            : " "
+                    };
+                });
+
+
+                //tuto treba for na ziskanie vzetkcyh golov o daneho zamestnanca
+                /*var response = new 
+                {
+                    reviewRecipientId = reviewRecipient.id,
+                    reviewId = reviewRecipient.review.id,
+                    goalId = reviewRecipient.goalAssignment.goal.id,
+                    goalName = reviewRecipient.goalAssignment.goal.name,
+
+                    employeeRecDescription = isSuperior
+                    ? (reviewRecipient.isSentEmployeeDesc ? reviewRecipient.employeeDescription ?? " " : " ")
+                    : (reviewRecipient.isSavedEmployeeDesc || reviewRecipient.isSentEmployeeDesc ? reviewRecipient.employeeDescription ?? " " : " "),
+                    superiorRecDescription = isSuperior
+                    ? (reviewRecipient.isSavedSuperiorDesc || reviewRecipient.isSentSuperiorDesc ? reviewRecipient.superiorDescription ?? " " : " ")
+                    : (reviewRecipient.isSentSuperiorDesc ? reviewRecipient.superiorDescription ?? " " : " "),
+
+                    employeeQuestionDescription = isSuperior
+                    ? (reviewQuestion.isSentEmployeeDesc ? reviewQuestion.employeeDescription ?? " " : " ")
+                    : (reviewQuestion.isSavedEmployeeDesc || reviewQuestion.isSentEmployeeDesc ? reviewQuestion.employeeDescription ?? " " : " "),
+                    superiorQuestionDescription = isSuperior
+                    ? (reviewQuestion.isSavedSuperiorDesc || reviewQuestion.isSentSuperiorDesc ? reviewQuestion.superiorDescription ?? " " : " ")
+                    : (reviewQuestion.isSentSuperiorDesc ? reviewQuestion.superiorDescription ?? " " : " "),
+
+                }; */
+
+                return Ok(response);
+
+
             }
             catch (Exception ex)
             {
@@ -343,17 +461,32 @@ namespace AGILE2024_BE.Controllers
                     return NotFound("Review recipient not found for this goal.");
                 }
 
+                var reviewQuestion = await dbContext.ReviewQuestions
+                   .Include(rq => rq.goalAssignment)
+                   .FirstOrDefaultAsync(rq => rq.goalAssignment.id == reviewRecipient.id && rq.goalAssignment.goalAssignment.id == goalId);
+
+
+                if (reviewQuestion == null)
+                {
+                    return NotFound("Review question not found for this goal.");
+                }
+
+
                 // Ak je superiorDescription
                 if (isSuperior)
                 {
                     reviewRecipient.superiorDescription = request.SuperiorDescription;
                     reviewRecipient.isSavedSuperiorDesc = true;
+                    reviewQuestion.superiorDescription = request.SuperiorDescription;
+                    reviewQuestion.isSavedSuperiorDesc = true;
                 }
                 // Ak je employeeDescription
                 else if (!isSuperior)
                 {
                     reviewRecipient.employeeDescription = request.EmployeeDescription;
                     reviewRecipient.isSavedEmployeeDesc = true;
+                    reviewQuestion.employeeDescription = request.EmployeeDescription;
+                    reviewQuestion.isSavedEmployeeDesc = true;
                 }
                 else
                 {
@@ -370,6 +503,10 @@ namespace AGILE2024_BE.Controllers
                 return StatusCode(500, "An error occurred while updating the description.");
             }
         }
+
+
+
+
 
         [HttpPut("SendDescription/{userId}/{reviewId}/{goalId}")]
         public async Task<IActionResult> SendDescription(Guid userId, Guid reviewId, Guid goalId, [FromBody] UpdateDescriptionRequest request)
@@ -389,16 +526,32 @@ namespace AGILE2024_BE.Controllers
                     return NotFound("Review recipient not found for this goal.");
                 }
 
+                var reviewQuestion = await dbContext.ReviewQuestions
+                    .Include(rq => rq.goalAssignment)
+                    .FirstOrDefaultAsync(rq => rq.goalAssignment.id == reviewRecipient.id);
+
+
+
+                if (reviewQuestion == null)
+                {
+                    return NotFound("Review question not found for this goal.");
+                }
+
                 if (isSuperior)
                 {
                     reviewRecipient.superiorDescription = request.SuperiorDescription;
                     reviewRecipient.isSentSuperiorDesc = true;
+                    reviewQuestion.superiorDescription = request.SuperiorQuestion;
+                    reviewQuestion.isSentSuperiorDesc = true;
+
                 }
                 // Ak je employeeDescription
                 else if (!isSuperior)
                 {
                     reviewRecipient.employeeDescription = request.EmployeeDescription;
                     reviewRecipient.isSentEmployeeDesc = true;
+                    reviewQuestion.employeeDescription = request.EmployeeDescription;
+                    reviewQuestion.isSentEmployeeDesc = true;
                 }
                 else
                 {
@@ -406,6 +559,7 @@ namespace AGILE2024_BE.Controllers
                 }
 
                 dbContext.ReviewRecipents.Update(reviewRecipient);
+                dbContext.ReviewQuestions.Update(reviewQuestion);
                 await dbContext.SaveChangesAsync();
 
                 return Ok(new { message = "Descriptions sent successfully" });
@@ -443,6 +597,9 @@ namespace AGILE2024_BE.Controllers
         {
             public string EmployeeDescription { get; set; }
             public string SuperiorDescription { get; set; }
+
+            public string EmployeeQuestion { get; set; }
+            public string SuperiorQuestion { get; set; }
         }
 
 
