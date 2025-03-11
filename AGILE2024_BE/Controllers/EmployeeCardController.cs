@@ -107,6 +107,7 @@ namespace AGILE2024_BE.Controllers
                 TitleBefore = joined.EmployeeCard.User.Title_before ?? string.Empty,
                 TitleAfter = joined.EmployeeCard.User.Title_after ?? string.Empty,
                 Department = joined.Department.Name ?? "N/A",
+                DepartmentId = joined.Department.Id.ToString() ?? string.Empty,
                 Surname = joined.EmployeeCard.User.Surname ?? string.Empty,
                 MiddleName = joined.EmployeeCard.User.MiddleName
             })

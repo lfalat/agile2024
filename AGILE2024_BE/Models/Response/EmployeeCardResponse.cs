@@ -12,6 +12,7 @@
         public string TitleBefore { get; set; }
         public string TitleAfter { get; set; }
         public string Department { get; set; }
+        public string DepartmentId { get; set; }
         public string Organization { get; set; }
         public string ContractType { get; set; }
         public int? WorkPercentage { get; set; }
