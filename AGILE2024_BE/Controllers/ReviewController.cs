@@ -124,7 +124,7 @@ namespace AGILE2024_BE.Controllers
                     isSavedEmployeeDesc = false,
                     isSentSuperiorDesc = false,
                     isSentEmployeeDesc = false,
-                    
+
                 };
 
                 reviewQuestions.Add(reviewQuestion);
@@ -444,10 +444,10 @@ namespace AGILE2024_BE.Controllers
             return Ok(employeeReviews);
         }
 
-        
 
-        [HttpPut("UpdateDescription/{userId}/{reviewId}/{goalId}")]
-        public async Task<IActionResult> UpdateDescription(Guid userId, Guid reviewId, Guid goalId, [FromBody] UpdateDescriptionRequest request)
+
+        [HttpPut("UpdateDescription/{userId}/{reviewId}/{goalId}/{employeeId}")]
+        public async Task<IActionResult> UpdateDescription(Guid userId, Guid reviewId, Guid goalId, Guid employeeId, [FromBody] UpdateDescriptionRequest request)
         {
             try
             {
@@ -456,7 +456,8 @@ namespace AGILE2024_BE.Controllers
                 bool isSuperior = userRoleName == "Vedúci zamestnanec";
                 var reviewRecipient = await dbContext.ReviewRecipents
                     .Include(rr => rr.goalAssignment)
-                    .FirstOrDefaultAsync(rr => rr.review.id == reviewId && rr.goalAssignment.goal.id == goalId);
+                    .ThenInclude(g => g.employee)
+                    .FirstOrDefaultAsync(rr => rr.review.id == reviewId && rr.goalAssignment.goal.id == goalId && rr.goalAssignment.employee.Id == employeeId);
 
                 if (reviewRecipient == null)
                 {
@@ -465,7 +466,7 @@ namespace AGILE2024_BE.Controllers
 
                 var reviewQuestion = await dbContext.ReviewQuestions
                    .Include(rq => rq.goalAssignment)
-                   .FirstOrDefaultAsync(rq => rq.goalAssignment.id == reviewRecipient.id && rq.goalAssignment.goalAssignment.id == goalId);
+                   .FirstOrDefaultAsync(rq => rq.goalAssignment.id == reviewRecipient.id);
 
 
                 if (reviewQuestion == null)
