@@ -1,0 +1,22 @@
+﻿using System.ComponentModel.DataAnnotations.Schema;
+
+namespace AGILE2024_BE.Models
+{
+    public class ReviewQuestion
+    {
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public Guid id { get; set; }
+        [ForeignKey(nameof(ReviewRecipient) + "Id")]
+        public required ReviewRecipient goalAssignment { get; set; }
+        public string? superiorDescription { get; set; }
+        public string? employeeDescription { get; set; }
+        public required bool isSavedSuperiorDesc { get; set; } = false;
+        public required bool isSavedEmployeeDesc { get; set; } = false;
+        public required bool isSentSuperiorDesc { get; set; } = false;
+        public required bool isSentEmployeeDesc { get; set; } = false;
+<<<<<<< HEAD
+
+=======
+>>>>>>> 339-notifikácie
+    }
+}
