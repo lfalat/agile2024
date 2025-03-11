@@ -38,7 +38,7 @@ namespace AGILE2024_BE.Data
         public DbSet<Review> Reviews { get; set; }
         public DbSet<ReviewQuestion> ReviewQuestions { get; set; }
         public DbSet<ReviewRecipient> ReviewRecipents { get; set; }
-
+        public DbSet<Notification> Notifications { get; set; }
         #endregion
     }
 }

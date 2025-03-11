@@ -3,11 +3,12 @@ using AGILE2024_BE.Models;
 using AGILE2024_BE.Models.Identity;
 using AGILE2024_BE.Models.Requests.GoalRequests;
 using AGILE2024_BE.Models.Response;
-
+using AGILE2024_BE.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 
 namespace AGILE2024_BE.Controllers
@@ -20,13 +21,15 @@ namespace AGILE2024_BE.Controllers
         private RoleManager<IdentityRole> roleManager;
         private IConfiguration config;
         private AgileDBContext dbContext;
+        private IHubContext<NotificationHub> hubContext;
 
-        public GoalController(UserManager<ExtendedIdentityUser> um, IConfiguration co,  RoleManager<IdentityRole> rm, AgileDBContext db)
+        public GoalController(UserManager<ExtendedIdentityUser> um, IConfiguration co,  RoleManager<IdentityRole> rm, AgileDBContext db, IHubContext<NotificationHub> hubContext)
         {
             this.userManager = um;
             this.config = co;
             this.roleManager = rm;
             this.dbContext = db;
+            this.hubContext = hubContext;
         }
 
         [HttpGet("Goals")]
@@ -136,6 +139,9 @@ namespace AGILE2024_BE.Controllers
                 };
                 dbContext.Goals.Add(newGoal);
                 await dbContext.SaveChangesAsync();
+
+                List<Notification> notifications = new List<Notification>();
+
                 if (request.EmployeeIds != null && request.EmployeeIds.Any())
                 {
                     foreach (var employeeId in request.EmployeeIds)
@@ -153,9 +159,39 @@ namespace AGILE2024_BE.Controllers
                             };
 
                             dbContext.GoalAssignments.Add(goalAssignment);
+
+                            var notification = new Notification
+                            {
+                                Id = Guid.NewGuid(),
+                                User = employee.User,
+                                ReferencedItemId = newGoal.id,
+                                Message = $"Bol Vám priradený nový cieľ '{newGoal.name}'. Prosím, pre bližšie informácie si pozrite detail cieľa !",
+                                CreatedAt = DateTime.UtcNow,
+                                IsRead = false,
+                                NotificationType = EnumNotificationType.GoalCreatedNotificationType
+                            };
+
+                            notifications.Add(notification);
                         }
                     }
+                    dbContext.Notifications.AddRange(notifications);
                     await dbContext.SaveChangesAsync();
+
+                    foreach (var notification in notifications)
+                    {
+                        await hubContext.Clients.User(notification.User.Id)
+                            .SendAsync("ReceiveNotification", new NotificationResponse
+                            {
+                                Id = notification.Id,
+                                Message = notification.Message,
+                                Title = NotificationHelpers.GetNotificationTitle(notification.NotificationType),
+                                //Link = $"/goals/{notification.ReferencedItemId}",
+                                ReferencedItem = notification.ReferencedItemId.ToString(),
+                                NotificationType = notification.NotificationType,
+                                CreatedAt = notification.CreatedAt,
+                                IsRead = notification.IsRead
+                            });
+                    }
                 }
 
                 return Ok(new { message = "Goal created successfully.", goalId = newGoal.id });
@@ -245,6 +281,8 @@ namespace AGILE2024_BE.Controllers
                 dbContext.GoalAssignments.RemoveRange(existingAssignments);
                 await dbContext.SaveChangesAsync();
 
+                List<Notification> notifications = new List<Notification>();
+
                 // Reassign the new employees if employee IDs are provided
                 if (request.EmployeeIds != null && request.EmployeeIds.Any())
                 {
@@ -263,9 +301,41 @@ namespace AGILE2024_BE.Controllers
                             };
 
                             dbContext.GoalAssignments.Add(goalAssignment);
+
+                            var notification = new Notification
+                            {
+                                Id = Guid.NewGuid(),
+                                User = employee.User,
+                                ReferencedItemId = goal.id,
+                                Message = $"Bola zaznamenaná zmena stavu cieľa '{goal.name}'. Prosím skontrolujte si priradené ciele !",
+                                DueDate = goal.dueDate,
+                                CreatedAt = DateTime.UtcNow,
+                                IsRead = false,
+                                NotificationType = EnumNotificationType.GoalUpdatedNotificationType
+                            };
+
+                            notifications.Add(notification);
                         }
                     }
+
+                    dbContext.Notifications.AddRange(notifications);
                     await dbContext.SaveChangesAsync();
+
+                    foreach (var notification in notifications)
+                    {
+                        await hubContext.Clients.User(notification.User.Id)
+                            .SendAsync("ReceiveNotification", new NotificationResponse
+                            {
+                                Id = notification.Id,
+                                Message = notification.Message,
+                                Title = NotificationHelpers.GetNotificationTitle(notification.NotificationType),
+                                //Link = $"/goals/{notification.ReferencedItemId}",
+                                ReferencedItem = notification.ReferencedItemId.ToString(),
+                                NotificationType = notification.NotificationType,
+                                CreatedAt = notification.CreatedAt,
+                                IsRead = notification.IsRead
+                            });
+                    }
                 }
 
                 return Ok(new { message = "Goal updated successfully.", goalId = goal.id });
@@ -282,21 +352,6 @@ namespace AGILE2024_BE.Controllers
         {
             try
             {
-                /*ExtendedIdentityUser? user = await userManager.FindByEmailAsync(User.Identity?.Name!);
-
-                if (user == null)
-                {
-                    return Unauthorized("User not found.");
-                }
-
-                var employeeCard = await dbContext.EmployeeCards
-                    .FirstOrDefaultAsync(ec => ec.User.Id == user.Id);
-
-                if (employeeCard == null)
-                {
-                    return Unauthorized("Employee card not found for the logged-in user.");
-                }*/
-
                 var goal = await dbContext.Goals
                     .Include(g => g.category)
                     .Include(g => g.status)
@@ -334,9 +389,46 @@ namespace AGILE2024_BE.Controllers
                 else { goal.finishedDate = null; }
 
                 dbContext.Goals.Update(goal);
+
+                var assignedGoals = await dbContext.GoalAssignments.Include(x => x.employee.User).Where(x => x.goal.id == goal.id).ToListAsync();
+                var usersToNotify = assignedGoals.Select(x => x.employee.User).ToList();
+                //usersToNotify.Add(goal.employee.User);
+                List<Notification> notifications = new();
+
+                foreach (var user in usersToNotify.Distinct())
+                {
+                    var notification = new Notification
+                    {
+                        Id = Guid.NewGuid(),
+                        User = user,
+                        NotificationType = EnumNotificationType.GoalUpdatedNotificationType, 
+                        ReferencedItemId = goal.id,
+                        Message = $"Bola zaznamenaná zmena stavu cieľa '{goal.name}'. Prosím skontrolujte si priradené ciele !",
+                        CreatedAt = DateTime.UtcNow,
+                        IsRead = false
+                    };
+
+                    notifications.Add(notification);
+                    await dbContext.Notifications.AddAsync(notification);
+                }
+                
                 await dbContext.SaveChangesAsync();
 
-           
+                foreach (var notification in notifications)
+                {
+                    await hubContext.Clients.User(notification.User.Id.ToString())
+                        .SendAsync("ReceiveNotification", new NotificationResponse
+                        {
+                            Id = notification.Id,
+                            Message = notification.Message,
+                            Title = NotificationHelpers.GetNotificationTitle(notification.NotificationType),
+                            ReferencedItem = notification.ReferencedItemId.ToString(),
+                            NotificationType = notification.NotificationType,
+                            CreatedAt = notification.CreatedAt,
+                            IsRead = notification.IsRead
+                        });
+                }
+
                 return Ok(new { message = "Goal updated successfully.", goalId = goal.id });
             }
             catch (Exception ex)

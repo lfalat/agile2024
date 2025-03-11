@@ -1,5 +1,6 @@
 using AGILE2024_BE.Data;
 using AGILE2024_BE.Models.Identity;
+using AGILE2024_BE.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -51,7 +52,18 @@ namespace AGILE2024_BE.API
             webAppBuilder.Services.AddSwaggerGen();
             webAppBuilder.Services.AddAntiforgery();
 
-            webAppBuilder.Services.AddCors();
+            webAppBuilder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowAllOrigins", builder =>
+                {
+                    builder.AllowAnyOrigin()
+                           .AllowAnyMethod()
+                           .AllowAnyHeader();
+                });
+            }
+            );
+
+            webAppBuilder.Services.AddSignalR();
 
             webAppBuilder.Services.AddDbContext<AgileDBContext>(options =>
             {
@@ -90,7 +102,25 @@ namespace AGILE2024_BE.API
                     ClockSkew = TimeSpan.Zero,
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(webAppConfig["Jwt:Key"]))
                 };
+
+                options.Events = new JwtBearerEvents
+                {
+                    OnMessageReceived = context =>
+                    {
+                        var accessToken = context.Request.Query["access_token"];
+
+                        if (!string.IsNullOrEmpty(accessToken))
+                        {
+                            context.Token = accessToken;
+                        }
+                        return Task.CompletedTask;
+                    }
+                };
             });
+            //webAppBuilder.Services.AddScoped<INotificationHandler, DummyNotificationHandler>();
+            webAppBuilder.Services.AddScoped<INotificationHandler, GoalNotificationHandler>();
+            webAppBuilder.Services.AddScoped<INotificationHandler, FeedbackNotificationHandler>();
+            webAppBuilder.Services.AddHostedService<NotificationService>();
 
             webAppBuilder.Services.AddControllers();
         }
@@ -114,6 +144,8 @@ namespace AGILE2024_BE.API
             webApp.UseAuthorization();
 
             webApp.MapControllers();
+
+            webApp.MapHub<NotificationHub>("/notificationHub");
         }
     }
 }

@@ -4,6 +4,7 @@ using AGILE2024_BE.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AGILE2024_BE.Migrations
 {
     [DbContext(typeof(AgileDBContext))]
-    partial class AgileDBContextModelSnapshot : ModelSnapshot
+    [Migration("20250308101247_AddNotification")]
+    partial class AddNotification
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -561,12 +564,12 @@ namespace AGILE2024_BE.Migrations
                     b.Property<int>("NotificationType")
                         .HasColumnType("int");
 
-                    b.Property<Guid>("ReferencedItemId")
-                        .HasColumnType("char(36)");
-
                     b.Property<string>("UserId")
                         .IsRequired()
                         .HasColumnType("varchar(255)");
+
+                    b.Property<Guid>("referencedItemId")
+                        .HasColumnType("char(36)");
 
                     b.HasKey("Id");
 
@@ -651,18 +654,6 @@ namespace AGILE2024_BE.Migrations
                     b.Property<string>("employeeDescription")
                         .HasColumnType("longtext");
 
-                    b.Property<bool>("isSavedEmployeeDesc")
-                        .HasColumnType("tinyint(1)");
-
-                    b.Property<bool>("isSavedSuperiorDesc")
-                        .HasColumnType("tinyint(1)");
-
-                    b.Property<bool>("isSentEmployeeDesc")
-                        .HasColumnType("tinyint(1)");
-
-                    b.Property<bool>("isSentSuperiorDesc")
-                        .HasColumnType("tinyint(1)");
-
                     b.Property<string>("superiorDescription")
                         .HasColumnType("longtext");
 
@@ -682,23 +673,8 @@ namespace AGILE2024_BE.Migrations
                     b.Property<Guid>("GoalAssignmentId")
                         .HasColumnType("char(36)");
 
-                    b.Property<Guid>("ReviewId")
-                        .HasColumnType("char(36)");
-
                     b.Property<string>("employeeDescription")
                         .HasColumnType("longtext");
-
-                    b.Property<bool>("isSavedEmployeeDesc")
-                        .HasColumnType("tinyint(1)");
-
-                    b.Property<bool>("isSavedSuperiorDesc")
-                        .HasColumnType("tinyint(1)");
-
-                    b.Property<bool>("isSentEmployeeDesc")
-                        .HasColumnType("tinyint(1)");
-
-                    b.Property<bool>("isSentSuperiorDesc")
-                        .HasColumnType("tinyint(1)");
 
                     b.Property<string>("superiorDescription")
                         .HasColumnType("longtext");
@@ -706,8 +682,6 @@ namespace AGILE2024_BE.Migrations
                     b.HasKey("id");
 
                     b.HasIndex("GoalAssignmentId");
-
-                    b.HasIndex("ReviewId");
 
                     b.ToTable("ReviewRecipents");
                 });
@@ -1095,15 +1069,7 @@ namespace AGILE2024_BE.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("AGILE2024_BE.Models.Review", "review")
-                        .WithMany()
-                        .HasForeignKey("ReviewId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.Navigation("goalAssignment");
-
-                    b.Navigation("review");
                 });
 
             modelBuilder.Entity("JobPositionOrganization", b =>
