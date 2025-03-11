@@ -410,6 +410,7 @@ namespace AGILE2024_BE.Controllers
             if (loggedEmployee == null)
                 return NotFound("Zamestnanec nenájdený.");
 
+             
 
             var reviewRecipients = await dbContext.ReviewRecipents
                     .Include(rr => rr.review)
@@ -488,7 +489,7 @@ namespace AGILE2024_BE.Controllers
                 {
                     reviewRecipient.employeeDescription = request.EmployeeDescription;
                     reviewRecipient.isSavedEmployeeDesc = true;
-                    reviewQuestion.employeeDescription = request.EmployeeDescription;
+                    reviewQuestion.employeeDescription = request.EmployeeQuestion;
                     reviewQuestion.isSavedEmployeeDesc = true;
                 }
                 else
@@ -516,6 +517,12 @@ namespace AGILE2024_BE.Controllers
         {
             try
             {
+                Console.WriteLine("\n-----------------------------------------------------------\n");
+                Console.WriteLine("\n\n" + request.SuperiorDescription);
+                Console.WriteLine("\n" + request.EmployeeDescription);
+                Console.WriteLine("\n" + request.SuperiorQuestion);
+                Console.WriteLine("\n" + request.EmployeeQuestion);
+                
                 var userRoleName = await GetUserRoleAsync(userId);
 
                 bool isSuperior = userRoleName == "Vedúci zamestnanec";
@@ -530,11 +537,13 @@ namespace AGILE2024_BE.Controllers
                     return NotFound("Review recipient not found for this goal.");
                 }
 
+                Console.WriteLine(reviewRecipient);
+
                 var reviewQuestion = await dbContext.ReviewQuestions
                     .Include(rq => rq.goalAssignment)
                     .FirstOrDefaultAsync(rq => rq.goalAssignment.id == reviewRecipient.id);
 
-
+                Console.WriteLine(reviewQuestion);
 
                 if (reviewQuestion == null)
                 {
@@ -554,7 +563,7 @@ namespace AGILE2024_BE.Controllers
                 {
                     reviewRecipient.employeeDescription = request.EmployeeDescription;
                     reviewRecipient.isSentEmployeeDesc = true;
-                    reviewQuestion.employeeDescription = request.EmployeeDescription;
+                    reviewQuestion.employeeDescription = request.EmployeeQuestion;
                     reviewQuestion.isSentEmployeeDesc = true;
                 }
                 else
