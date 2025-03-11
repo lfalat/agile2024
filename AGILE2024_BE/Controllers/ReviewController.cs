@@ -79,7 +79,7 @@ namespace AGILE2024_BE.Controllers
                 employeeEndDate = request.EmployeeDeadline,
                 superiorEndDate = request.SuperiorDeadline,
                 createDate = DateTime.UtcNow,
-                endDate = null
+                endDate = null,
             };
 
             dbContext.Reviews.Add(review);
@@ -109,7 +109,7 @@ namespace AGILE2024_BE.Controllers
                     isSavedSuperiorDesc = false,
                     isSavedEmployeeDesc = false,
                     isSentSuperiorDesc = false,
-                    isSentEmployeeDesc = false,
+                    isSentEmployeeDesc = false
                 };
 
                 reviewRecipients.Add(reviewRecipient);
@@ -124,6 +124,7 @@ namespace AGILE2024_BE.Controllers
                     isSavedEmployeeDesc = false,
                     isSentSuperiorDesc = false,
                     isSentEmployeeDesc = false,
+                    
                 };
 
                 reviewQuestions.Add(reviewQuestion);
@@ -165,7 +166,8 @@ namespace AGILE2024_BE.Controllers
                         .DistinctBy(emp => emp.id)
                         .ToList(),
                    CreatedAt = group.FirstOrDefault()?.review.createDate,
-                   CompletedAt = group.FirstOrDefault()?.review.endDate
+                   CompletedAt = group.FirstOrDefault()?.review.endDate,
+
                })
                .ToList();
 
@@ -508,8 +510,8 @@ namespace AGILE2024_BE.Controllers
 
 
 
-        [HttpPut("SendDescription/{userId}/{reviewId}/{goalId}")]
-        public async Task<IActionResult> SendDescription(Guid userId, Guid reviewId, Guid goalId, [FromBody] UpdateDescriptionRequest request)
+        [HttpPut("SendDescription/{userId}/{reviewId}/{goalId}/{employeeId}")]
+        public async Task<IActionResult> SendDescription(Guid userId, Guid reviewId, Guid goalId, Guid employeeId, [FromBody] UpdateDescriptionRequest request)
         {
             try
             {
@@ -519,7 +521,8 @@ namespace AGILE2024_BE.Controllers
 
                 var reviewRecipient = await dbContext.ReviewRecipents
                     .Include(rr => rr.goalAssignment)
-                    .FirstOrDefaultAsync(rr => rr.review.id == reviewId && rr.goalAssignment.goal.id == goalId);
+                    .ThenInclude(g => g.employee)
+                    .FirstOrDefaultAsync(rr => rr.review.id == reviewId && rr.goalAssignment.goal.id == goalId && rr.goalAssignment.employee.Id == employeeId);
 
                 if (reviewRecipient == null)
                 {
