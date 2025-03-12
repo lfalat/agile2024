@@ -8,7 +8,8 @@
         public string Position { get; set; }
         public string Location { get; set; }
         public string? Image { get; set; }
-        public List<OrgTreeNodeResponse> Subordinate { get; set; } = new List<OrgTreeNodeResponse>();
+        public List<OrgTreeNodeResponse> children { get; set; } = new List<OrgTreeNodeResponse>();
         public bool isSuperior { get; set; } = false;
+        public bool expanded { get; set; } = true;
     }
 }

@@ -5,6 +5,6 @@
         public Guid Id { get; set; }
         public string Name { get; set; }
         public string Code { get; set; }
-        public OrgTreeNodeResponse OrgTree { get; set; }
+        public List<OrgTreeNodeResponse> OrgTree { get; set; }
     }
 }
