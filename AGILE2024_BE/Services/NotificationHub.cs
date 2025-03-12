@@ -14,7 +14,7 @@ namespace AGILE2024_BE
                 await Groups.AddToGroupAsync(Context.ConnectionId, userId);
                 Console.WriteLine($"User {userId} connected with ConnectionId: {Context.ConnectionId}");
             }
-
+             
             await base.OnConnectedAsync();
         }
     }
