@@ -29,7 +29,7 @@ namespace AGILE2024_BE.API
         public static async Task Main(string[] args)
         {
             var webAppBuilder = WebApplication.CreateBuilder(args);
-
+            //webAppBuilder.WebHost.UseUrls("http://0.0.0.0:5001", "https://0.0.0.0:5002");
             AddServices(webAppBuilder);
 
             var webApp = webAppBuilder.Build();
@@ -41,6 +41,7 @@ namespace AGILE2024_BE.API
                 var services = scope.ServiceProvider;
                 await Seed.InitializeAsync(services);
             }
+
 
             webApp.Run();
         }
@@ -140,9 +141,14 @@ namespace AGILE2024_BE.API
                 .AllowAnyMethod()
                 .AllowAnyHeader());
 
+            webApp.UseDefaultFiles();
+            webApp.UseStaticFiles();
+            webApp.UseRouting();
+
             webApp.UseAuthentication();
             webApp.UseAuthorization();
 
+            webApp.MapFallbackToFile("index.html");
             webApp.MapControllers();
 
             webApp.MapHub<NotificationHub>("/notificationHub");

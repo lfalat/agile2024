@@ -1,19 +1,13 @@
 ﻿using AGILE2024_BE.Data;
 using AGILE2024_BE.Models;
 using AGILE2024_BE.Models.Identity;
-using AGILE2024_BE.Models.Requests;
-using AGILE2024_BE.Models.Response;
 using AGILE2024_BE.Services;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
-using System.Reflection.Emit;
 using System.Security.Claims;
-using System.Xml.Linq;
 
 namespace AGILE2024_BE.Controllers
 {
@@ -129,6 +123,32 @@ namespace AGILE2024_BE.Controllers
             await dbContext.SaveChangesAsync();
 
             return Ok();
+        }
+
+        [HttpDelete("Delete/{id}")]
+        [Authorize]
+        public async Task<IActionResult> DeleteNotification(Guid id)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized("User ID not found.");
+            }
+
+            var notification = await dbContext.Notifications
+                .Where(n => n.Id == id && n.User.Id == userId)
+                .FirstOrDefaultAsync();
+
+            if (notification == null)
+            {
+                return NotFound("Notification not found.");
+            }
+
+            dbContext.Notifications.Remove(notification);
+            await dbContext.SaveChangesAsync();
+
+            return Ok(new { message = "Notification deleted successfully." });
         }
     }
 }
