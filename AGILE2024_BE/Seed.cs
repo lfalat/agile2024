@@ -1,5 +1,6 @@
 ﻿﻿using AGILE2024_BE.Data;
 using AGILE2024_BE.Models;
+using AGILE2024_BE.Models.Entity.SuccessionPlan;
 using AGILE2024_BE.Models.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -17,6 +18,40 @@ namespace AGILE2024_BE
 
             if (_roleManager != null && _userManager != null)
             {
+                //Seed ReadyStatus
+                var readyStatuses = new List<ReadyStatus>
+                {
+                    new ReadyStatus { description = "Okamžitá pripravenosť" },
+                    new ReadyStatus { description = "1 - 2 roky" },
+                    new ReadyStatus { description = "3+ rokov" }
+                };
+                foreach (var ReadyStatus in readyStatuses)
+                {
+                    var existingContractType = await context.ReadyStatuses
+                        .FirstOrDefaultAsync(ct => ct.description == ReadyStatus.description);
+
+                    if (existingContractType == null)
+                    {
+                        await context.ReadyStatuses.AddAsync(ReadyStatus);
+                    }
+                }
+                //Seed LeaveType
+                var leaveTypes = new List<LeaveType>
+                {
+                    new LeaveType { description = "Kritický odchod" },
+                    new LeaveType { description = "Plánovaný odchod" },
+                    new LeaveType { description = "Redundancia týmu" }
+                };
+                foreach (var leaveType in leaveTypes)
+                {
+                    var existingContractType = await context.LeaveTypes
+                        .FirstOrDefaultAsync(ct => ct.description == leaveType.description);
+
+                    if (existingContractType == null)
+                    {
+                        await context.LeaveTypes.AddAsync(leaveType);
+                    }
+                }
                 //Seed FeedbackRequestStatuses
                 var feedbackRequestStatuses = new List<FeedbackRequestStatus>
                 {
