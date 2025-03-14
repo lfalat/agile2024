@@ -1,4 +1,5 @@
 ﻿using AGILE2024_BE.Models;
+using AGILE2024_BE.Models.Entity.SuccessionPlan;
 using AGILE2024_BE.Models.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -39,6 +40,10 @@ namespace AGILE2024_BE.Data
         public DbSet<ReviewQuestion> ReviewQuestions { get; set; }
         public DbSet<ReviewRecipient> ReviewRecipents { get; set; }
         public DbSet<Notification> Notifications { get; set; }
+        public DbSet<SuccessionPlan> SuccessionPlans { get; set; }
+        public DbSet<SuccesionSkills> SuccesionSkills { get; set; }
+        public DbSet<ReadyStatus> ReadyStatuses { get; set; }
+        public DbSet<LeaveType> LeaveTypes { get; set; }
         #endregion
     }
 }
