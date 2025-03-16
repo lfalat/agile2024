@@ -2,8 +2,9 @@
 {
     public class OrgTreeNodeResponse
     {
-        public Guid EmplyeeCardId { get; set; }
-        public Guid UserId { get; set; }
+        public Guid? EmplyeeCardId { get; set; }
+        public Guid? UserId { get; set; }
+        public int level { get; set; } = 0;
         public string Name { get; set; }
         public string Position { get; set; }
         public string Location { get; set; }
