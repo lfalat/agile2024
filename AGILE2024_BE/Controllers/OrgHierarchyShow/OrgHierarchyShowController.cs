@@ -1,4 +1,5 @@
 ﻿using AGILE2024_BE.Data;
+using AGILE2024_BE.Models;
 using AGILE2024_BE.Models.Identity;
 using AGILE2024_BE.Models.Requests.EmployeeCardRequests;
 using AGILE2024_BE.Models.Response.TreeNode;
@@ -30,38 +31,73 @@ namespace AGILE2024_BE.Controllers.OrgHierarchyShow
         }
 
         [HttpGet("MoveUp")]
-        public async Task<IActionResult> MoveUp(string userId)
+        public async Task<IActionResult> MoveUp(string? userId)
         {
             //get department of user
-            Guid guid = Guid.Parse(userId);
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Ok("");
+            }
             var orgUser = await dbContext.EmployeeCards
                 .Include(ec => ec.User)
                 .Include(ec => ec.Department)
+                .Include(ec => ec.Department.Superior)
+                .Include(ec => ec.Department.ParentDepartment)
+                .Include(ec => ec.Department.ParentDepartment.Superior)
                 .FirstOrDefaultAsync(ec => ec.User.Id == userId);
-            if (orgUser == null || orgUser.User == null)
+            if (orgUser.Department.ParentDepartment == null)
             {
-                return NotFound("Employee card not found.");
+                return Ok("");
+            } else
+            { 
+                return Ok(orgUser.Department.ParentDepartment.Superior.Id);
             }
-            //get superior of department
-            if (orgUser.Department.Superior == null)
-            {
-                return Get0LevelOrganization(orgUser.Department.Organization.Id.ToString()).Result;
-            }
-
-            var supDepartment  = await dbContext.Departments
-                .FirstOrDefaultAsync(d => d.Id.ToString() == orgUser.Department.Superior.Id);
-
-            return Ok(GetOneLevelHierarchy(supDepartment.Id.ToString()).Result);
         }
 
         [HttpGet("Get0LevelOrganization")]
-        public async Task<IActionResult> Get0LevelOrganization(string orgId)
+        public async Task<IActionResult> Get0LevelOrganization(string userId)
         {
-            Guid guid = Guid.Parse(orgId);
+            //Get organization of user
+            var orgUser = await dbContext.EmployeeCards
+                .Include(ec => ec.User)
+                .Include(ec => ec.Department)
+                .Include(ec => ec.Department.Organization)
+                .Include(ec => ec.Department.Organization.Location)
+                .FirstOrDefaultAsync(ec => ec.User.Id == userId);
             //1st level get departments of organization
+            var departments = await dbContext.Departments
+                .Include(d => d.Superior)
+                .Include(d => d.Organization)
+                .Where(d => d.Organization.Id == orgUser.Department.Organization.Id && d.ParentDepartment == null)
+                .ToListAsync();
+            // if organization has only one department return deparntment level
+            if (departments.Count == 1)
+            {
+                return Ok(GetOneLevelHierarchy(departments[0].Id.ToString()).Result);
+            }
             //get head users of departments
-
-            return Ok();
+            TreeResponse tree = new TreeResponse
+            {
+                Id = orgUser.Department.Organization.Id,
+                Name = orgUser.Department.Organization.Name,
+                Code = orgUser.Department.Organization.Code,
+                OrgTree = new List<OrgTreeNodeResponse>()
+            };
+            OrgTreeNodeResponse treeHead = new OrgTreeNodeResponse
+            {
+                EmplyeeCardId = null,
+                UserId = null,
+                Name = $"{orgUser.Department.Organization.Name} ({orgUser.Department.Organization.Code})",
+                Location = $"{orgUser?.Department?.Organization?.Location?.Name} ({orgUser?.Department?.Organization?.Location?.Code})",
+                Position = "",
+            };
+            tree.OrgTree.Add(treeHead);
+            foreach (var department in departments)
+            {
+                var headUser = GetUser(department.Superior.Id, 1).Result;
+                treeHead.children.Add(headUser);
+            }
+            return Ok(tree);
         }
 
         [HttpGet("GetLevelByID")]
@@ -112,18 +148,18 @@ namespace AGILE2024_BE.Controllers.OrgHierarchyShow
 
             foreach (var user in orgUsers)
             {
-                headUser.children.Add(GetUser(user.User.Id).Result);
+                headUser.children.Add(GetUser(user.User.Id, 1).Result);
             }
 
             foreach (var subDepartment in subDepartments)
             {
-                headUser.children.Add(GetUser(subDepartment.Superior.Id).Result);
+                headUser.children.Add(GetUser(subDepartment.Superior.Id, 1).Result);
             }
 
             return tree;
         }
 
-        private async Task<OrgTreeNodeResponse> GetUser(string userId)
+        private async Task<OrgTreeNodeResponse> GetUser(string userId, int level = 0)
         {
             var orgUser = await dbContext.EmployeeCards
                 .Include(ec => ec.User)
@@ -131,15 +167,18 @@ namespace AGILE2024_BE.Controllers.OrgHierarchyShow
                 .Include(ec => ec.Level)
                 .Include(ec => ec.Location)
                 .Include(ec => ec.Level.JobPosition)
+                .Include(ec => ec.Department.Superior)
                 .FirstOrDefaultAsync(ec => ec.User.Id == userId);
             OrgTreeNodeResponse response = new OrgTreeNodeResponse
             {
                 EmplyeeCardId = orgUser.Id,
-                UserId = Guid.Parse(orgUser.User.Id),
+                UserId = Guid.Parse(orgUser?.User?.Id),
                 Name = orgUser.User.Name + " " + orgUser.User.Surname,
-                Location = $"{orgUser.Location.Name} ({orgUser.Location.Code})",
-                isSuperior = orgUser.Department.Superior.Id == orgUser.User.Id,
-                Position = $"{orgUser.Level.JobPosition.Name} + ({orgUser.Level.Name})",
+                Image = orgUser.User.ProfilePicLink,
+                Location = $"{orgUser?.Location?.Name} ({orgUser?.Location?.Code})",
+                isSuperior = orgUser?.Department?.Superior?.Id == orgUser.User.Id,
+                Position = $"{orgUser?.Level.JobPosition?.Name} + ({orgUser?.Level?.Name})",
+                level = level,
             };
             return response;
         }
