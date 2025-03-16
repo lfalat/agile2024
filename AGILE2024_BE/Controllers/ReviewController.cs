@@ -261,42 +261,6 @@ namespace AGILE2024_BE.Controllers
         {
             try
             {
-                /*
-                var userRoleName = await GetUserRoleAsync(userId);
-                bool isSuperior = userRoleName == "Vedúci zamestnanec";
-
-                
-                var reviewRecipients = await dbContext.ReviewRecipents
-                    .Include(rr => rr.review)
-                    .Include(rr => rr.goalAssignment)
-                        .ThenInclude(g => g.goal)
-                     .Where(rr => rr.review.id == reviewId && rr.goalAssignment.employee.Id == employeeId)
-                    .ToListAsync();
-
-                if (!reviewRecipients.Any())
-                {
-                    return NotFound("No review records found for the selected employee in this review.");
-                }
-
-                
-                var reviewTexts = reviewRecipients.Select(rr => new
-                {
-                    reviewRecipientId = rr.id,
-                    reviewId = rr.review.id,
-                    goalId = rr.goalAssignment.goal.id,
-                    goalName = rr.goalAssignment.goal.name,
-
-                    employeeDescription = isSuperior
-                    ? (rr.isSentEmployeeDesc ? rr.employeeDescription ?? " " : " ")
-                    : (rr.isSavedEmployeeDesc || rr.isSentEmployeeDesc ? rr.employeeDescription ?? " " : " "),
-                    superiorDescription = isSuperior
-                    ? (rr.isSavedSuperiorDesc || rr.isSentSuperiorDesc ? rr.superiorDescription ?? " " : " ")
-                    : (rr.isSentSuperiorDesc ? rr.superiorDescription ?? " " : " ")
-                }).ToList();
-
-                return Ok(reviewTexts);
-                */
-                //vies co moze byt aj problem? to ze niesu tie questions vytvorene v databaze
 
                 var userRoleName = await GetUserRoleAsync(userId);
                 bool isSuperior = userRoleName == "Vedúci zamestnanec";
@@ -313,10 +277,6 @@ namespace AGILE2024_BE.Controllers
                     return NotFound("ReviewRecipient not found.");
                 }
 
-                //var reviewQuestion = await dbContext.ReviewQuestions
-                //    .FirstOrDefaultAsync(rq => rq.goalAssignment.id == reviewRecipient.id);
-
-                // Optional: Load all related ReviewQuestions for these recipients
                 var recipientIds = reviewRecipients.Select(rr => rr.id).ToList();
 
                 var reviewQuestions = await dbContext.ReviewQuestions
@@ -360,31 +320,6 @@ namespace AGILE2024_BE.Controllers
                             : " "
                     };
                 });
-
-
-                //tuto treba for na ziskanie vzetkcyh golov o daneho zamestnanca
-                /*var response = new 
-                {
-                    reviewRecipientId = reviewRecipient.id,
-                    reviewId = reviewRecipient.review.id,
-                    goalId = reviewRecipient.goalAssignment.goal.id,
-                    goalName = reviewRecipient.goalAssignment.goal.name,
-
-                    employeeRecDescription = isSuperior
-                    ? (reviewRecipient.isSentEmployeeDesc ? reviewRecipient.employeeDescription ?? " " : " ")
-                    : (reviewRecipient.isSavedEmployeeDesc || reviewRecipient.isSentEmployeeDesc ? reviewRecipient.employeeDescription ?? " " : " "),
-                    superiorRecDescription = isSuperior
-                    ? (reviewRecipient.isSavedSuperiorDesc || reviewRecipient.isSentSuperiorDesc ? reviewRecipient.superiorDescription ?? " " : " ")
-                    : (reviewRecipient.isSentSuperiorDesc ? reviewRecipient.superiorDescription ?? " " : " "),
-
-                    employeeQuestionDescription = isSuperior
-                    ? (reviewQuestion.isSentEmployeeDesc ? reviewQuestion.employeeDescription ?? " " : " ")
-                    : (reviewQuestion.isSavedEmployeeDesc || reviewQuestion.isSentEmployeeDesc ? reviewQuestion.employeeDescription ?? " " : " "),
-                    superiorQuestionDescription = isSuperior
-                    ? (reviewQuestion.isSavedSuperiorDesc || reviewQuestion.isSentSuperiorDesc ? reviewQuestion.superiorDescription ?? " " : " ")
-                    : (reviewQuestion.isSentSuperiorDesc ? reviewQuestion.superiorDescription ?? " " : " "),
-
-                }; */
 
                 return Ok(response);
 
@@ -585,8 +520,7 @@ namespace AGILE2024_BE.Controllers
 
         private async Task<string> GetUserRoleAsync(Guid userId)
         {
-            var user = await dbContext.Users
-                .FirstOrDefaultAsync(u => u.Id == userId.ToString());
+            var user = await userManager.FindByEmailAsync(User.Identity?.Name!);
 
             if (user == null)
             {
@@ -605,6 +539,75 @@ namespace AGILE2024_BE.Controllers
 
             return userRoleName;
         }
+
+        [HttpGet("GetPendingReview")]
+        public async Task<IActionResult> GetPendingFeedback()
+        {
+            var user = await userManager.FindByEmailAsync(User.Identity?.Name!);
+            if (user == null) return BadRequest("User not found.");
+
+            var employeeCard = await dbContext.EmployeeCards
+                .FirstOrDefaultAsync(ec => ec.User.Id == user.Id);
+            if (employeeCard == null) return BadRequest("Employee card not found.");
+
+            // Získanie požiadaviek a spätnej väzby
+            var reviewRecipients = await GetReviewRecipients(employeeCard.Id);
+            var unreadFeedback = await GetUnreadFeedback(employeeCard.Id);
+
+            // Spracovanie review recipients
+            var savedButNotSent = FilterReviewRecipients(reviewRecipients, true);
+            var notSavedAndNotSent = FilterReviewRecipients(reviewRecipients, false);
+
+            var uniqueReviewIds = GetDistinctReviewIds(savedButNotSent);
+            var uniqueReviewIds2 = GetDistinctReviewIds(notSavedAndNotSent);
+            var unreadReviewIds = unreadFeedback.Select(f => f.id).ToList();
+
+            // Zostavenie správ pre frontend
+            var messages = new List<object>();
+            if (uniqueReviewIds.Any())
+                messages.Add(CreateMessage(3, uniqueReviewIds, "V sekcii “Posudzovanie cieľov” máte rozpracovaný 1 posudok. \nPre dokončenie operácie je potrebné posudok uložiť a odoslať."));
+
+            if (uniqueReviewIds2.Any())
+                messages.Add(CreateMessage(2, uniqueReviewIds2, "Bola Vám priradená požiadavka pre vypracovanie posudku cieľa. \nPosudok cieľa môžete vypracovať v sekcii “Posudzovanie cieľov”."));
+
+            if (unreadReviewIds.Any())
+                messages.Add(CreateMessage(1, unreadReviewIds, "Bola Vám priradená požiadavka pre vypísanie spätnej väzby. Spätnú väzbu môžete vypísať v sekcii “Spätná väzba”."));
+
+            return Ok(messages);
+        }
+        private async Task<List<ReviewRecipient>> GetReviewRecipients(Guid employeeId)
+        {
+            return await dbContext.ReviewRecipents
+                .Include(rr => rr.review)
+                .Include(rr => rr.goalAssignment)
+                .ThenInclude(ga => ga.employee)
+                .Where(rr => rr.goalAssignment.employee.Id == employeeId)
+                .ToListAsync();
+        }
+        private async Task<List<FeedbackRecipient>> GetUnreadFeedback(Guid employeeId)
+        {
+            return await dbContext.FeedbackRecipients
+                .Include(f => f.employee)
+                .Where(f => f.employee.Id == employeeId && f.isRead == false)
+                .ToListAsync();
+        }
+        private List<ReviewRecipient> FilterReviewRecipients(List<ReviewRecipient> recipients, bool saved)
+        {
+            return recipients.Where(rr =>
+                (saved && ((rr.isSavedSuperiorDesc && !rr.isSentSuperiorDesc) || (rr.isSavedEmployeeDesc && !rr.isSentEmployeeDesc))) ||
+                (!saved && ((!rr.isSavedSuperiorDesc && !rr.isSentSuperiorDesc) || (!rr.isSavedEmployeeDesc && !rr.isSentEmployeeDesc)))
+            ).ToList();
+        }
+        private List<Guid> GetDistinctReviewIds(List<ReviewRecipient> recipients)
+        {
+            return recipients.Select(rr => rr.review.id).Distinct().ToList();
+        }
+        private object CreateMessage(int messageType, List<Guid> reviewIds, string message)
+        {
+            return new { message, reviewIds, messageType };
+        }
+
+
 
         public class UpdateDescriptionRequest
         {
