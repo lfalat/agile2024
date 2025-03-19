@@ -86,6 +86,34 @@ namespace AGILE2024_BE.Controllers
             return Ok(groupedPlans);
         }
 
+        [HttpGet("GetLeaveTypes")]
+        public async Task<ActionResult> GetLeaveTypes()
+        {
+            var leaveTypes = await dbContext.LeaveTypes
+               .Select(l => new 
+               {
+                   Id = l.id,
+                   Description = l.description
+               })
+               .ToListAsync();
+
+            return Ok(leaveTypes);
+        }
+
+        [HttpGet("GetReadyStatuses")]
+        public async Task<ActionResult> GetReadyStatuses()
+        {
+            var readyStatuses = await dbContext.ReadyStatuses
+               .Select(l => new
+               {
+                   Id = l.id,
+                   Description = l.description
+               })
+               .ToListAsync();
+
+            return Ok(readyStatuses);
+        }
+
         [HttpPost("Create")]
         [Authorize(Roles = RolesDef.Veduci)]
         public async Task<IActionResult> CreateSuccession([FromBody] CreateSuccessionRequest request)
