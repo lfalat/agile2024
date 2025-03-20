@@ -37,8 +37,11 @@ namespace AGILE2024_BE.Controllers
 
 
         [HttpGet("GetSuccessionPlans")]
+        [Authorize(Roles = RolesDef.Veduci)]
         public async Task<ActionResult<IEnumerable<SuccessionPlanResponse>>> GetSuccessionPlans()
         {
+            ExtendedIdentityUser? user = await userManager.FindByEmailAsync(User.Identity?.Name!);
+
             var successionPlans = await dbContext.SuccessionPlans
                 .Include(sp => sp.leaveType)
                 .Include(sp => sp.readyStatus)
@@ -54,6 +57,7 @@ namespace AGILE2024_BE.Controllers
                     .ThenInclude(lp => lp.User)
                 .Include(sp => sp.successor)
                     .ThenInclude(suc => suc.User)
+                //.Where(sp => sp.leavingPerson.User.Id == user.Id)
                 .ToListAsync();
 
 
@@ -65,6 +69,7 @@ namespace AGILE2024_BE.Controllers
                     LeaveTypeName = g.Key.description,
                     SuccessionPlans = g.Select(sp => new SuccessionPlanResponse
                     {
+                        id = sp.id,
                         // Leaving employee details
                         LeavingFullName = sp.leavingPerson != null
                     ? $"{sp.leavingPerson.User.Name} {sp.leavingPerson.User.Surname}"
@@ -89,6 +94,22 @@ namespace AGILE2024_BE.Controllers
                 }).ToList();
 
             return Ok(groupedPlans);
+        }
+
+
+        [HttpDelete("Delete/{id}")]
+        public async Task<IActionResult> Delete(Guid id)
+        {
+            var successionPlan = await dbContext.SuccessionPlans.FindAsync(id);
+
+            if (successionPlan == null)
+            {
+                return NotFound("Record not found");
+            }
+
+            dbContext.SuccessionPlans.Remove(successionPlan);
+            await dbContext.SaveChangesAsync();
+            return Ok("Uspesne vymazane");
         }
 
         [HttpGet("GetLeaveTypes")]
