@@ -2,6 +2,7 @@ namespace AGILE2024_BE.Models.Response
 {
     public class SuccessionPlanResponse
     {
+        public Guid id { get; set; }
         // Leaving employee
         public string LeavingFullName { get; set; }
         public string LeavingJobPosition { get; set; }
