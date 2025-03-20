@@ -110,7 +110,7 @@ namespace AGILE2024_BE.Controllers
                     EmployeeId = employeeCard.Id,
                     Email = employeeCard.User.Email,
                     Birthdate = employeeCard.Birthdate?.ToString("yyyy-MM-dd"),
-                    Position = employeeCard.Level?.Name ?? "Neznáma pozícia",
+                    JobPosition = employeeCard.Level?.JobPosition.Name ?? "Neznáma pozícia",
                     StartWorkDate = employeeCard.StartWorkDate?.ToString("yyyy-MM-dd"),
                     Name = employeeCard.User.Name,
                     TitleBefore = employeeCard.User.Title_before,
