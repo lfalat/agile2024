@@ -13,6 +13,7 @@ using Azure.Core;
 using AGILE2024_BE.Models.Requests.GoalRequests;
 using AGILE2024_BE.Services;
 using Microsoft.AspNetCore.SignalR;
+using AGILE2024_BE.Models.Entity.SuccessionPlan;
 
 namespace AGILE2024_BE.Controllers
 {
@@ -126,45 +127,76 @@ namespace AGILE2024_BE.Controllers
                     return Unauthorized("User not found.");
                 }
 
-                if (request.EmployeeIds == null || !request.EmployeeIds.Any())
+                if (string.IsNullOrEmpty(request.LeavingId))
                 {
-                    return BadRequest("At least one employee must be assigned to the goal.");
+                    return BadRequest("Leaving person must be assigned.");
                 }
 
-                var employeeCard = await dbContext.EmployeeCards
-                    .FirstOrDefaultAsync(ec => ec.User.Id == user.Id);
-                if (employeeCard == null)
+                // Získanie odchádzajúceho zamestnanca (leavingPerson)
+                var leavingEmployeeCard = await dbContext.EmployeeCards
+                    .FirstOrDefaultAsync(ec => ec.Id.ToString() == request.LeavingId);
+                if (leavingEmployeeCard == null)
                 {
-                    return Unauthorized("Employee card not found for the logged-in user.");
-                }
-                var goalCategory = await dbContext.GoalCategory
-                    .FirstOrDefaultAsync(g => g.id.ToString() == request.GoalCategoryId);
-
-                if (goalCategory == null)
-                {
-                    return BadRequest($"Goal category {request.GoalCategoryId} does not exist.");
+                    return BadRequest("Leaving person not found.");
                 }
 
-                var goalStatus = await dbContext.GoalStatuses
-                .FirstOrDefaultAsync(s => s.description == "Nezačatý");
+               
+                var leaveType = await dbContext.LeaveTypes
+                    .FirstOrDefaultAsync(g => g.id.ToString() == request.LeaveType);
 
-                if (goalStatus == null)
+                if (leaveType == null)
                 {
-                    return BadRequest("Status 'Nezačatý' does not exist.");
+                    return BadRequest($"Leave type {request.LeaveType} does not exist.");
                 }
-                var newGoal = new Goal
+
+                var readyStatus = await dbContext.ReadyStatuses
+                    .FirstOrDefaultAsync(g => g.id.ToString() == request.ReadyStatus);
+
+                if (readyStatus == null)
                 {
-                    name = request.Name,
-                    description = request.Description,
-                    category = goalCategory,
-                    status = goalStatus,
-                    dueDate = DateTime.Parse(request.DueDate),
-                    employee = employeeCard
+                    return BadRequest($"Ready status {request.LeaveType} does not exist.");
+                }
+                var successionPlan = new SuccessionPlan
+                {
+                    leavingPerson = leavingEmployeeCard,
+                    leaveType = leaveType,
+                    reason = request.LeaveReason,
+                    leaveDate = request.LeaveDate,
+                    readyStatus = readyStatus,
+                    
+                    isExternal = string.IsNullOrEmpty(request.SuccessorId) // Ak SuccessorId je null, nastavíme isExternal na true
                 };
-                dbContext.Goals.Add(newGoal);
+
+                if (!string.IsNullOrEmpty(request.SuccessorId))
+                {
+                    var successorEmployeeCard = await dbContext.EmployeeCards
+                        .FirstOrDefaultAsync(ec => ec.Id.ToString() == request.SuccessorId);
+                    if (successorEmployeeCard != null)
+                    {
+                        successionPlan.successor = successorEmployeeCard;
+                    }
+                    else
+                    {
+                        return BadRequest("Successor not found.");
+                    }
+                }
+
+                if (request.Skills != null && request.Skills.Any())
+                {
+                    var skills = request.Skills.Select(skillRequest => new SuccesionSkills
+                    {
+                        description = skillRequest.Description,
+                        isReady = skillRequest.IsReady,
+                        successionPlan = successionPlan 
+                    }).ToList();
+
+                    dbContext.SuccesionSkills.AddRange(skills);
+                }
+
+                dbContext.SuccessionPlans.Add(successionPlan);
                 await dbContext.SaveChangesAsync();
 
-                List<Notification> notifications = new List<Notification>();
+                /*List<Notification> notifications = new List<Notification>();
 
                 if (request.EmployeeIds != null && request.EmployeeIds.Any())
                 {
@@ -216,9 +248,9 @@ namespace AGILE2024_BE.Controllers
                                 IsRead = notification.IsRead
                             });
                     }
-                }
+                }*/
 
-                return Ok(new { message = "Goal created successfully.", goalId = newGoal.id });
+                return Ok(new { message = "Succession plan created successfully." });
             }
             catch (Exception ex)
             {
