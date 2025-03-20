@@ -206,6 +206,10 @@ namespace AGILE2024_BE.Controllers
             }
             var employeesZamestnanec = await userManager.GetUsersInRoleAsync(RolesDef.Zamestnanec);
             var employeesVeduci = await userManager.GetUsersInRoleAsync(RolesDef.Veduci);
+            var employeesSpravca = await userManager.GetUsersInRoleAsync(RolesDef.Spravca);
+
+            var allEmployees = employeesZamestnanec.Concat(employeesVeduci).Concat(employeesSpravca).Distinct().ToList();
+
 
             var employeeCards = await dbContext.EmployeeCards
                 .Include(ec => ec.User)
@@ -225,7 +229,8 @@ namespace AGILE2024_BE.Controllers
             }
 
             var employeesInSameDepartment = employeeCards
-                .Where(ec => ec.Department.Id == userDepartmentId && employeesZamestnanec.Contains(ec.User))
+                //.Where(ec => ec.Department.Id == userDepartmentId && employeesZamestnanec.Contains(ec.User))
+                .Where(ec => ec.Department.Id == userDepartmentId && allEmployees.Contains(ec.User))
                 .Select(ec => new EmployeeCardResponse
                 {
                     EmployeeId = ec.Id,
