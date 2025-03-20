@@ -50,6 +50,10 @@ namespace AGILE2024_BE.Controllers
                     .ThenInclude(lp => lp.Level.JobPosition)
                 .Include(sp => sp.leavingPerson) // Leaving employee
                     .ThenInclude(lp => lp.Department)
+                .Include(sp => sp.leavingPerson)
+                    .ThenInclude(lp => lp.User)
+                .Include(sp => sp.successor)
+                    .ThenInclude(suc => suc.User)
                 .ToListAsync();
 
 
