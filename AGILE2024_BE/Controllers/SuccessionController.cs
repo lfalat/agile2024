@@ -286,7 +286,7 @@ namespace AGILE2024_BE.Controllers
 
         [HttpGet("GetById/{id}")]
         [Authorize(Roles = RolesDef.Veduci)]
-        public async Task<ActionResult<SuccessionPlanResponse>> GetById(Guid id)
+        public async Task<ActionResult<SuccessionPlanEditResponse>> GetById(Guid id)
         {
             var successionPlan = await dbContext.SuccessionPlans
                 .Include(sp => sp.leaveType)
@@ -295,6 +295,7 @@ namespace AGILE2024_BE.Controllers
                     .ThenInclude(ec => ec.Level.JobPosition)
                 .Include(sp => sp.successor)
                     .ThenInclude(ec => ec.Department)
+                    .ThenInclude(d => d.Organization)
                 .Include(sp => sp.leavingPerson)
                     .ThenInclude(lp => lp.Level.JobPosition)
                 .Include(sp => sp.leavingPerson)
@@ -310,14 +311,17 @@ namespace AGILE2024_BE.Controllers
                 return NotFound("Succession plan not found.");
             }
 
-            var response = new SuccessionPlanResponse
+            var response = new SuccessionPlanEditResponse
             {
                 id = successionPlan.id,
+                LeaveType = successionPlan.leaveType.description,
+                LeavingId = successionPlan.leavingPerson.Id,
                 LeavingFullName = successionPlan.leavingPerson != null
                     ? $"{successionPlan.leavingPerson.User.Name} {successionPlan.leavingPerson.User.Surname}"
                     : "N/A",
                 LeavingJobPosition = successionPlan.leavingPerson?.Level.JobPosition?.Name ?? "N/A",
                 LeavingDepartment = successionPlan.leavingPerson?.Department?.Name ?? "N/A",
+                LeavingOrganization = successionPlan.leavingPerson?.Department?.Organization?.Name ?? "N/A",
                 Reason = successionPlan.reason ?? "N/A",
                 LeaveDate = successionPlan.leaveDate,
                 SuccessorFullName = successionPlan.isExternal
