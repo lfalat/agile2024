@@ -210,6 +210,8 @@ namespace AGILE2024_BE.Controllers
                 TitleBefore = ec.User.Title_before ?? string.Empty,
                 TitleAfter = ec.User.Title_after ?? string.Empty,
                 Department = ec.Department.Name ?? "N/A",
+                Organization = ec.Department.Organization.Name,
+                JobPosition = ec.Level.JobPosition.Name,
                 Surname = ec.User.Surname ?? string.Empty,
                 MiddleName = ec.User.MiddleName
             }).ToListAsync();
