@@ -283,5 +283,164 @@ namespace AGILE2024_BE.Controllers
             }
         }
 
+        [HttpGet("GetById/{id}")]
+        [Authorize(Roles = RolesDef.Veduci)]
+        public async Task<ActionResult<SuccessionPlanResponse>> GetById(Guid id)
+        {
+            var successionPlan = await dbContext.SuccessionPlans
+                .Include(sp => sp.leaveType)
+                .Include(sp => sp.readyStatus)
+                .Include(sp => sp.successor)
+                    .ThenInclude(ec => ec.Level.JobPosition)
+                .Include(sp => sp.successor)
+                    .ThenInclude(ec => ec.Department)
+                .Include(sp => sp.leavingPerson)
+                    .ThenInclude(lp => lp.Level.JobPosition)
+                .Include(sp => sp.leavingPerson)
+                    .ThenInclude(lp => lp.Department)
+                .Include(sp => sp.leavingPerson)
+                    .ThenInclude(lp => lp.User)
+                .Include(sp => sp.successor)
+                    .ThenInclude(suc => suc.User)
+                .FirstOrDefaultAsync(sp => sp.id == id);
+
+            if (successionPlan == null)
+            {
+                return NotFound("Succession plan not found.");
+            }
+
+            var response = new SuccessionPlanResponse
+            {
+                id = successionPlan.id,
+                LeavingFullName = successionPlan.leavingPerson != null
+                    ? $"{successionPlan.leavingPerson.User.Name} {successionPlan.leavingPerson.User.Surname}"
+                    : "N/A",
+                LeavingJobPosition = successionPlan.leavingPerson?.Level.JobPosition?.Name ?? "N/A",
+                LeavingDepartment = successionPlan.leavingPerson?.Department?.Name ?? "N/A",
+                Reason = successionPlan.reason ?? "N/A",
+                LeaveDate = successionPlan.leaveDate,
+                SuccessorFullName = successionPlan.isExternal
+                    ? "N/A"
+                    : successionPlan.successor != null
+                        ? $"{successionPlan.successor.User.Name} {successionPlan.successor.User.Surname}"
+                        : "N/A",
+                SuccessorJobPosition = successionPlan.isExternal
+                    ? "N/A"
+                    : successionPlan.successor?.Level.JobPosition?.Name ?? "N/A",
+                SuccessorDepartment = successionPlan.isExternal
+                    ? "N/A"
+                    : successionPlan.successor?.Department?.Name ?? "N/A",
+                ReadyStatus = successionPlan.readyStatus?.description ?? "N/A"
+            };
+
+            return Ok(response);
+        }
+
+        [HttpPut("Update/{id}")]
+        [Authorize(Roles = RolesDef.Veduci)]
+        public async Task<IActionResult> UpdateSuccession(Guid id, [FromBody] UpdateSuccessionRequest request)
+        {
+            try
+            {
+                var successionPlan = await dbContext.SuccessionPlans
+                    .Include(sp => sp.leaveType)
+                    .Include(sp => sp.readyStatus)
+                    .Include(sp => sp.successor)
+                    .Include(sp => sp.leavingPerson)
+                    .FirstOrDefaultAsync(sp => sp.id == id);
+
+                if (successionPlan == null)
+                {
+                    return NotFound("Succession plan not found.");
+                }
+
+                // Update fields
+                var leaveType = await dbContext.LeaveTypes
+                    .FirstOrDefaultAsync(g => g.id.ToString() == request.LeaveType);
+                if (leaveType == null)
+                {
+                    return BadRequest($"Leave type {request.LeaveType} does not exist.");
+                }
+
+                var readyStatus = await dbContext.ReadyStatuses
+                    .FirstOrDefaultAsync(g => g.id.ToString() == request.ReadyStatus);
+                if (readyStatus == null)
+                {
+                    return BadRequest($"Ready status {request.ReadyStatus} does not exist.");
+                }
+
+                var leavingEmployeeCard = await dbContext.EmployeeCards
+                    .FirstOrDefaultAsync(ec => ec.Id.ToString() == request.LeavingId);
+                if (leavingEmployeeCard == null)
+                {
+                    return BadRequest("Leaving person not found.");
+                }
+
+                successionPlan.leavingPerson = leavingEmployeeCard;
+                successionPlan.leaveType = leaveType;
+                successionPlan.readyStatus = readyStatus;
+                successionPlan.reason = request.LeaveReason;
+                successionPlan.leaveDate = DateOnly.FromDateTime(request.LeaveDate.Value);
+                successionPlan.isExternal = string.IsNullOrEmpty(request.SuccessorId);
+
+                if (!successionPlan.isExternal)
+                {
+                    var successorEmployeeCard = await dbContext.EmployeeCards
+                        .FirstOrDefaultAsync(ec => ec.Id.ToString() == request.SuccessorId);
+                    if (successorEmployeeCard == null)
+                    {
+                        return BadRequest("Successor not found.");
+                    }
+
+                    successionPlan.successor = successorEmployeeCard;
+                }
+
+                // Handle SuccesionSkills manually
+                var existingSkills = await dbContext.SuccesionSkills
+                    .Where(skill => skill.successionPlan.id == id)
+                    .ToListAsync();
+
+                dbContext.SuccesionSkills.RemoveRange(existingSkills);
+
+                if (request.Skills != null && request.Skills.Any())
+                {
+                    var newSkills = request.Skills.Select(skillRequest => new SuccesionSkills
+                    {
+                        successionPlan = successionPlan, // Set the foreign key relationship
+                        description = skillRequest.Description,
+                        isReady = skillRequest.IsReady
+                    });
+
+                    await dbContext.SuccesionSkills.AddRangeAsync(newSkills);
+                }
+
+                await dbContext.SaveChangesAsync();
+                               
+                return Ok(new { message = "Succession plan updated successfully." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"An error occurred: {ex.Message}");
+            }
+        }
+
     }
+
+    public class UpdateSuccessionRequest
+    {
+        public string? LeavingId { get; set; }
+        public string? LeaveType { get; set; }
+        public string? LeaveReason { get; set; }
+        public DateTime? LeaveDate { get; set; }
+        public string? SuccessorId { get; set; }
+        public string? ReadyStatus { get; set; }
+        public List<SkillRequest>? Skills { get; set; }
+    }
+
+    public class SkillRequest
+    {
+        public string Description { get; set; }
+        public bool IsReady { get; set; }
+    }
+
 }
