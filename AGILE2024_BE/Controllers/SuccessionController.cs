@@ -183,12 +183,13 @@ namespace AGILE2024_BE.Controllers
                 }
                 var successionPlan = new SuccessionPlan
                 {
+                    id = new Guid(),
                     leavingPerson = leavingEmployeeCard,
                     leaveType = leaveType,
                     reason = request.LeaveReason,
                     leaveDate = request.LeaveDate,
                     readyStatus = readyStatus,
-                    
+
                     isExternal = string.IsNullOrEmpty(request.SuccessorId) // Ak SuccessorId je null, nastavíme isExternal na true
                 };
 
