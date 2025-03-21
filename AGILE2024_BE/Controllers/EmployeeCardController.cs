@@ -195,6 +195,29 @@ namespace AGILE2024_BE.Controllers
             return Ok(employeeCards);
         }
 
+        [HttpGet("GetEmployeesWithouSuperiors")]
+        public async Task<IActionResult> GetEmployeesWithouSuperiors()
+        {
+            var employeesZamestnanec = await userManager.GetUsersInRoleAsync(RolesDef.Zamestnanec);
+            var employeeCards = await dbContext.EmployeeCards
+            .Include(ec => ec.User)
+            .Where(ec => employeesZamestnanec.Contains(ec.User))
+            .Select(ec => new EmployeeCardResponse
+            {
+                EmployeeId = ec.Id,
+                Email = ec.User.Email,
+                Name = ec.User.Name ?? string.Empty,
+                TitleBefore = ec.User.Title_before ?? string.Empty,
+                TitleAfter = ec.User.Title_after ?? string.Empty,
+                Department = ec.Department.Name ?? "N/A",
+                Surname = ec.User.Surname ?? string.Empty,
+                MiddleName = ec.User.MiddleName
+            }).ToListAsync();
+
+            return Ok(employeeCards);
+        }
+
+
         [HttpGet("GetEmployeesInTeam")]
         public async Task<IActionResult> GetEmployeesInTeam()
         {
@@ -229,8 +252,8 @@ namespace AGILE2024_BE.Controllers
             }
 
             var employeesInSameDepartment = employeeCards
-                //.Where(ec => ec.Department.Id == userDepartmentId && employeesZamestnanec.Contains(ec.User))
-                .Where(ec => ec.Department.Id == userDepartmentId && allEmployees.Contains(ec.User))
+                .Where(ec => ec.Department.Id == userDepartmentId && employeesZamestnanec.Contains(ec.User))
+                //.Where(ec => ec.Department.Id == userDepartmentId && allEmployees.Contains(ec.User))
                 .Select(ec => new EmployeeCardResponse
                 {
                     EmployeeId = ec.Id,

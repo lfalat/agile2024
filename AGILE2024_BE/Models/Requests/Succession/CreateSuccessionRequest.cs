@@ -8,7 +8,7 @@
         public required string LeaveType { get; set; }
         public required DateOnly LeaveDate { get; set; }
 
-        public string SuccessorId { get; set; }
+        public string? SuccessorId { get; set; }
         public required string ReadyStatus { get; set; }
 
         public List<SuccessionSkillRequest> Skills { get; set; }
@@ -17,5 +17,7 @@
     {
         public string Description { get; set; }
         public bool IsReady { get; set; }
+
+        public bool isNotified { get; set; }
     }
 }
