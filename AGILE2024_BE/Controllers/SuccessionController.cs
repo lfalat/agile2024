@@ -80,7 +80,7 @@ namespace AGILE2024_BE.Controllers
                         LeaveDate = sp.leaveDate,
 
                         // Successor details (can be internal/external)
-                        SuccessorFullName = sp.isExternal ? "N/A"
+                        SuccessorFullName = sp.isExternal ? "Externý zamestnanec"
                     : sp.successor != null ? $"{sp.successor.User.Name} {sp.successor.User.Surname}"
                         : "N/A",
                         SuccessorJobPosition = sp.isExternal
