@@ -18,7 +18,7 @@ internal static class NotificationHelpers
             case EnumNotificationType.GoalUnfinishedReminderNotificationType:
                 return "Nedokončený cieľ!";
             case EnumNotificationType.NewSuccessionNotificationType:
-                return "";
+                return "Nové nástupníctvo!";
             default:
                 return "Nová notifikácia!";
         }
