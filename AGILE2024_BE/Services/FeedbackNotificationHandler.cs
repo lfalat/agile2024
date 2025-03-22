@@ -35,19 +35,24 @@ namespace AGILE2024_BE.Services
                             n.NotificationType == EnumNotificationType.FeedbackUnsentReminderNotificationType)
                 .ToListAsync();
 
+            var existingNotificationsDict = existingNotifications.ToDictionary(n => n.ReferencedItemId);
             List<Notification> notifications = new();
 
             foreach (var feedback in feedbacks)
             {
-                var existingNotification = existingNotifications.FirstOrDefault(n => n.ReferencedItemId == feedback.id);
+                // Skip feedbacks with null employee.User or feedbackRequest
+                if (feedback.employee?.User == null || feedback.feedbackRequest == null)
+                {
+                    continue;
+                }
 
-                if (existingNotification == null)
+                if (!existingNotificationsDict.ContainsKey(feedback.id))
                 {
                     var notification = new Notification
                     {
                         CreatedAt = DateTime.Now,
-                        Id = new Guid(),
-                        Message = $"Bola zaznamenená neodoslaná spätná väzba {feedback.feedbackRequest.title}. Prosím vráťte sa a dokončite operáciu !",
+                        Id = Guid.NewGuid(),
+                        Message = $"Bola zaznamenená neodoslaná spätná väzba {feedback.feedbackRequest.title}. Prosím vráťte sa a dokončite operáciu!",
                         IsRead = false,
                         NotificationType = EnumNotificationType.FeedbackUnsentReminderNotificationType,
                         ReferencedItemId = feedback.id,
@@ -58,21 +63,28 @@ namespace AGILE2024_BE.Services
                 }
             }
 
-            foreach(var notifacation in notifications)
+            foreach (var notification in notifications)
             {
                 var response = new NotificationResponse
                 {
-                    CreatedAt = notifacation.CreatedAt,
-                    Id = notifacation.Id,
-                    IsRead = notifacation.IsRead,
-                    Message = notifacation.Message,
-                    NotificationType = notifacation.NotificationType,
-                    ReferencedItem = notifacation.ReferencedItemId.ToString(),
-                    Title = NotificationHelpers.GetNotificationTitle(notifacation.NotificationType)
+                    CreatedAt = notification.CreatedAt,
+                    Id = notification.Id,
+                    IsRead = notification.IsRead,
+                    Message = notification.Message,
+                    NotificationType = notification.NotificationType,
+                    ReferencedItem = notification.ReferencedItemId.ToString(),
+                    Title = NotificationHelpers.GetNotificationTitle(notification.NotificationType)
                 };
 
-                await hubContext.Clients.User(notifacation.User.Id)
-                    .SendAsync("ReceiveNotification", response, cancellationToken);
+                try
+                {
+                    await hubContext.Clients.User(notification.User.Id)
+                        .SendAsync("ReceiveNotification", response, cancellationToken);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error sending notification: {ex.Message}");
+                }
             }
 
             if (notifications.Any())
@@ -81,5 +93,6 @@ namespace AGILE2024_BE.Services
                 await dbContext.SaveChangesAsync();
             }
         }
+
     }
 }
