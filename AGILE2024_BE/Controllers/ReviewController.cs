@@ -550,13 +550,16 @@ namespace AGILE2024_BE.Controllers
                 .FirstOrDefaultAsync(ec => ec.User.Id == user.Id);
             if (employeeCard == null) return BadRequest("Employee card not found.");
 
+            var isVeduci = (await userManager.GetUsersInRoleAsync(RolesDef.Veduci)).Any(u => u.Id == user.Id);
+
+
             // Získanie požiadaviek a spätnej väzby
             var reviewRecipients = await GetReviewRecipients(employeeCard.Id);
             var unreadFeedback = await GetUnreadFeedback(employeeCard.Id);
 
             // Spracovanie review recipients
-            var savedButNotSent = FilterReviewRecipients(reviewRecipients, true);
-            var notSavedAndNotSent = FilterReviewRecipients(reviewRecipients, false);
+            var savedButNotSent = FilterReviewRecipients(reviewRecipients, true, isVeduci);
+            var notSavedAndNotSent = FilterReviewRecipients(reviewRecipients, false, isVeduci);
 
             var uniqueReviewIds = GetDistinctReviewIds(savedButNotSent);
             var uniqueReviewIds2 = GetDistinctReviewIds(notSavedAndNotSent);
@@ -581,7 +584,7 @@ namespace AGILE2024_BE.Controllers
                 .Include(rr => rr.review)
                 .Include(rr => rr.goalAssignment)
                 .ThenInclude(ga => ga.employee)
-                .Where(rr => rr.goalAssignment.employee.Id == employeeId)
+                .Where(rr => rr.goalAssignment.employee.Id == employeeId || rr.review.sender.Id == employeeId)
                 .ToListAsync();
         }
         private async Task<List<FeedbackRecipient>> GetUnreadFeedback(Guid employeeId)
@@ -591,13 +594,26 @@ namespace AGILE2024_BE.Controllers
                 .Where(f => f.employee.Id == employeeId && f.isRead == false)
                 .ToListAsync();
         }
-        private List<ReviewRecipient> FilterReviewRecipients(List<ReviewRecipient> recipients, bool saved)
+        /* private List<ReviewRecipient> FilterReviewRecipients(List<ReviewRecipient> recipients, bool saved)
+         {
+             return recipients.Where(rr =>
+                 (saved && ((rr.isSavedSuperiorDesc && !rr.isSentSuperiorDesc) || (rr.isSavedEmployeeDesc && !rr.isSentEmployeeDesc))) ||
+                 (!saved && ((!rr.isSavedSuperiorDesc && !rr.isSentSuperiorDesc) || (!rr.isSavedEmployeeDesc && !rr.isSentEmployeeDesc)))
+             ).ToList();
+         }*/
+        private List<ReviewRecipient> FilterReviewRecipients(List<ReviewRecipient> recipients, bool saved, bool isVeduci)
         {
             return recipients.Where(rr =>
-                (saved && ((rr.isSavedSuperiorDesc && !rr.isSentSuperiorDesc) || (rr.isSavedEmployeeDesc && !rr.isSentEmployeeDesc))) ||
-                (!saved && ((!rr.isSavedSuperiorDesc && !rr.isSentSuperiorDesc) || (!rr.isSavedEmployeeDesc && !rr.isSentEmployeeDesc)))
+                (saved &&
+                    ((isVeduci && rr.isSavedSuperiorDesc && !rr.isSentSuperiorDesc) ||
+                     (!isVeduci && rr.isSavedEmployeeDesc && !rr.isSentEmployeeDesc))) ||
+                (!saved &&
+                    ((isVeduci && !rr.isSavedSuperiorDesc && !rr.isSentSuperiorDesc && rr.isSentEmployeeDesc) ||
+                     (!isVeduci && !rr.isSavedEmployeeDesc && !rr.isSentEmployeeDesc && rr.isSentSuperiorDesc)))
             ).ToList();
         }
+
+
         private List<Guid> GetDistinctReviewIds(List<ReviewRecipient> recipients)
         {
             return recipients.Select(rr => rr.review.id).Distinct().ToList();
