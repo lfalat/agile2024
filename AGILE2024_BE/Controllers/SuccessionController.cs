@@ -61,6 +61,11 @@ namespace AGILE2024_BE.Controllers
                 .ToListAsync();
 
 
+            var skills = await dbContext.SuccesionSkills
+            .Include(skill => skill.successionPlan) 
+            .ToListAsync();
+
+
             var groupedPlans = successionPlans
                 .GroupBy(sp => new { sp.leaveType.id, sp.leaveType.description })
                 .Select(g => new SuccessionPlansByLeaveTypeResponse
@@ -89,7 +94,8 @@ namespace AGILE2024_BE.Controllers
                         SuccessorDepartment = sp.isExternal
                     ? "N/A"
                     : sp.successor?.Department?.Name ?? "N/A",
-                        ReadyStatus = sp.readyStatus.description ?? "N/A"
+                        ReadyStatus = sp.readyStatus.description ?? "N/A",
+                        ReadyState = CalculateReadyState(skills, sp.id.ToString())
                     }).ToList()
                 }).ToList();
 
@@ -311,6 +317,14 @@ namespace AGILE2024_BE.Controllers
                 return NotFound("Succession plan not found.");
             }
 
+            var skills = await dbContext.SuccesionSkills
+                .Where(s => s.successionPlan.id == id)
+                .Select(skill => new SuccessionSkillResponse
+                {
+                    Description = skill.description,
+                    IsReady = skill.isReady
+                }).ToListAsync();
+
             var response = new SuccessionPlanEditResponse
             {
                 id = successionPlan.id,
@@ -324,6 +338,7 @@ namespace AGILE2024_BE.Controllers
                 LeavingOrganization = successionPlan.leavingPerson?.Department?.Organization?.Name ?? "N/A",
                 Reason = successionPlan.reason ?? "N/A",
                 LeaveDate = successionPlan.leaveDate,
+                SuccessorId = successionPlan.successor?.Id.ToString(),
                 SuccessorFullName = successionPlan.isExternal
                     ? "N/A"
                     : successionPlan.successor != null
@@ -335,7 +350,9 @@ namespace AGILE2024_BE.Controllers
                 SuccessorDepartment = successionPlan.isExternal
                     ? "N/A"
                     : successionPlan.successor?.Department?.Name ?? "N/A",
-                ReadyStatus = successionPlan.readyStatus?.description ?? "N/A"
+                ReadyStatusId = successionPlan.readyStatus.id.ToString(),
+                ReadyStatus = successionPlan.readyStatus?.description ?? "N/A",
+                Skills = skills
             };
 
             return Ok(response);
@@ -359,33 +376,14 @@ namespace AGILE2024_BE.Controllers
                     return NotFound("Succession plan not found.");
                 }
 
-                // Update fields
-                var leaveType = await dbContext.LeaveTypes
-                    .FirstOrDefaultAsync(g => g.id.ToString() == request.LeaveType);
-                if (leaveType == null)
-                {
-                    return BadRequest($"Leave type {request.LeaveType} does not exist.");
-                }
-
                 var readyStatus = await dbContext.ReadyStatuses
-                    .FirstOrDefaultAsync(g => g.id.ToString() == request.ReadyStatus);
+                    .FirstOrDefaultAsync(g => g.id.ToString() == request.ReadyStatusId);
                 if (readyStatus == null)
                 {
                     return BadRequest($"Ready status {request.ReadyStatus} does not exist.");
                 }
 
-                var leavingEmployeeCard = await dbContext.EmployeeCards
-                    .FirstOrDefaultAsync(ec => ec.Id.ToString() == request.LeavingId);
-                if (leavingEmployeeCard == null)
-                {
-                    return BadRequest("Leaving person not found.");
-                }
-
-                successionPlan.leavingPerson = leavingEmployeeCard;
-                successionPlan.leaveType = leaveType;
                 successionPlan.readyStatus = readyStatus;
-                successionPlan.reason = request.LeaveReason;
-                successionPlan.leaveDate = DateOnly.FromDateTime(request.LeaveDate.Value);
                 successionPlan.isExternal = string.IsNullOrEmpty(request.SuccessorId);
 
                 if (!successionPlan.isExternal)
@@ -429,17 +427,31 @@ namespace AGILE2024_BE.Controllers
             }
         }
 
+        private string CalculateReadyState(List<SuccesionSkills> skills, string successionPlanId)
+        {
+            var planSkills = skills.Where(skill => skill.successionPlan.id.ToString() == successionPlanId).ToList();
+            if (!planSkills.Any())
+                return "0%";
+
+            int totalSkills = planSkills.Count;
+            int readySkills = planSkills.Count(skill => skill.isReady == true);
+
+            int readyPercentage = (int)((double)readySkills / totalSkills * 100);
+
+            return $"{readyPercentage}%"; 
+        }
+
     }
 
     public class UpdateSuccessionRequest
     {
-        public string? LeavingId { get; set; }
-        public string? LeaveType { get; set; }
-        public string? LeaveReason { get; set; }
-        public DateTime? LeaveDate { get; set; }
+
         public string? SuccessorId { get; set; }
         public string? ReadyStatus { get; set; }
+        public string? ReadyStatusId { get; set; }
         public List<SkillRequest>? Skills { get; set; }
+
+        public bool isNotified { get; set; }
     }
 
     public class SkillRequest

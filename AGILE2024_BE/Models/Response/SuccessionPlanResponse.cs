@@ -15,5 +15,6 @@ namespace AGILE2024_BE.Models.Response
         public string SuccessorJobPosition { get; set; }
         public string SuccessorDepartment { get; set; }
         public string ReadyStatus { get; set; }
+        public string ReadyState { get; set; }
     }
 }
