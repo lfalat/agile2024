@@ -115,8 +115,14 @@ namespace AGILE2024_BE.Controllers
                     var superior = await dbContext.Users
                         .FirstOrDefaultAsync(o => o.Id == createRequest.superior.ToString());
 
-                    
-                    
+                    //TODO: Check if superior is not as superiori in different department else change department of emplyoee card
+                    var superiorDepartment = await dbContext.Departments
+                        .FirstOrDefaultAsync(d => d.Superior.Id == superior!.Id!);
+                    if (superiorDepartment != null)
+                    {
+                        return BadRequest($"Vedúci oddelenia {superior.Id} je už priradený k inému oddeleniu");
+                    }
+
                     var newDepartment = new Department
                     {
                         Id = Guid.NewGuid(),
@@ -178,7 +184,13 @@ namespace AGILE2024_BE.Controllers
 
                         await dbContext.SaveChangesAsync();
                     }
-
+                    //change employee card for superior
+                    var superiorEmployeeCard = await dbContext.EmployeeCards
+                        .Include(e => e.User)
+                        .FirstOrDefaultAsync(e => e.User.Id == superior.Id);
+                    superiorEmployeeCard.Department = newDepartment;
+                    dbContext.EmployeeCards.Update(superiorEmployeeCard);
+                    await dbContext.SaveChangesAsync();
                     await transaction.CommitAsync();
 
                     return Ok();
@@ -283,6 +295,13 @@ namespace AGILE2024_BE.Controllers
                     return BadRequest($"Organizácia {editRequest.Organization} neexistuje.");
                 }
 
+                //Check if superior is from department
+                var superiorEmployeeCard = await dbContext.EmployeeCards
+                    .Include(e => e.Department)
+                    .FirstOrDefaultAsync(e => e.User.Id == superior.Id);
+                if (superiorEmployeeCard == null || superiorEmployeeCard!.Department!.Id != existingDepartment.Id)
+                    return BadRequest($"Vedúci oddelenia nie je priradený ku oddeleniu {editRequest.Id}");
+
                 existingDepartment.Name = editRequest.Name;
                 existingDepartment.Code = editRequest.Code;
                 existingDepartment.Superior = superior;
@@ -372,10 +391,10 @@ namespace AGILE2024_BE.Controllers
         public async Task<IActionResult> GetDepartmentById(Guid departmentId)
         {
             var department = await dbContext.Departments
-        .Include(d => d.Organization)
-        .Include(d => d.ParentDepartment)
-        .Include(d => d.Superior)
-        .FirstOrDefaultAsync(d => d.Id == departmentId);
+            .Include(d => d.Organization)
+            .Include(d => d.ParentDepartment)
+            .Include(d => d.Superior)
+            .FirstOrDefaultAsync(d => d.Id == departmentId);
 
             if (department == null)
             {
@@ -400,8 +419,8 @@ namespace AGILE2024_BE.Controllers
                 Code = department.Code,
                 SuperiorId = department.Superior?.Id,
                 SuperiorName = department.Superior != null
-            ? $"{department.Superior.Name} {department.Superior.Surname}, {superiorRole}"
-            : null,
+                ? $"{department.Superior.Name} {department.Superior.Surname}, {superiorRole}"
+                : null,
                 OrganizationId = department.Organization.Id,
                 OrganizationName = department.Organization?.Name,
                 Created = department.Created,
@@ -518,6 +537,50 @@ namespace AGILE2024_BE.Controllers
                 Console.Error.WriteLine(ex);
                 return StatusCode(StatusCodes.Status500InternalServerError, "Error fetching departments with employee count.");
             }
+        }
+
+        [HttpGet("GetUsers")]
+        [Authorize(Roles = RolesDef.Spravca)]
+        public async Task<IActionResult> GetUsers(string? departmentId)
+        {
+            List<UserIdentityResponse> userIdentityResponses = new List<UserIdentityResponse>();
+            List<EmployeeCard> employees = new List<EmployeeCard>();
+            if (string.IsNullOrEmpty(departmentId))
+            {
+                employees = await dbContext.EmployeeCards
+                    .Include(e => e.User)
+                    .Include(e => e.Department)
+                    .Include(e => e.Department!.Superior)
+                    .Where(e => e.User != e.Department!.Superior)
+                    .OrderBy(e => e.User!.Name)
+                    .ThenBy(e => e.User!.Surname )
+                    .ToListAsync();
+            }
+            else 
+            {
+                employees = await dbContext.EmployeeCards
+                    .Include(e => e.User)
+                    .Where(e => e.Department!.Id.ToString() == departmentId)
+                    .OrderBy(e => e.User!.Name)
+                    .ThenBy(e => e.User!.Surname)
+                    .ToListAsync();
+            }
+            foreach (var employee in employees)
+            {
+                var roles = await userManager.GetRolesAsync(employee!.User);
+
+                userIdentityResponses.Add(new UserIdentityResponse
+                {
+                    id = employee!.User.Id,
+                    FirstName = employee!.User.Name,
+                    LastName = employee!.User.Surname,
+                    TitleBefore = employee!.User.Title_before,
+                    TitleAfter = employee!.User.Title_after,
+                    Email = employee!.User.Email!,
+                    Role = roles.FirstOrDefault()
+                });
+            }
+            return Ok(userIdentityResponses);
         }
 
     }
