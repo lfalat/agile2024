@@ -229,6 +229,7 @@ namespace AGILE2024_BE.Controllers
                 }
 
                 dbContext.SuccessionPlans.Add(successionPlan);
+                await dbContext.SaveChangesAsync();
 
                 if (request.isNotified && successionPlan.successor != null) {
                   
