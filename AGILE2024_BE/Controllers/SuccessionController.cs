@@ -26,13 +26,15 @@ namespace AGILE2024_BE.Controllers
         private RoleManager<IdentityRole> roleManager;
         private IConfiguration config;
         private AgileDBContext dbContext;
+        private IHubContext<NotificationHub> hubContext;
 
-        public SuccessionController(UserManager<ExtendedIdentityUser> um, IConfiguration co, RoleManager<IdentityRole> rm, AgileDBContext db)
+        public SuccessionController(UserManager<ExtendedIdentityUser> um, IConfiguration co, RoleManager<IdentityRole> rm, AgileDBContext db, IHubContext<NotificationHub> hubContext)
         {
             this.userManager = um;
             this.config = co;
             this.roleManager = rm;
             this.dbContext = db;
+            this.hubContext = hubContext;
         }
 
 
@@ -226,7 +228,32 @@ namespace AGILE2024_BE.Controllers
                 }
 
                 dbContext.SuccessionPlans.Add(successionPlan);
+
+                var notification = new Notification
+                {
+                    Id = Guid.NewGuid(),
+                    User = successionPlan.successor.User,
+                    ReferencedItemId = successionPlan.id,
+                    Message = $"Bolo Vám pridelené nástupníctvo na novú pracovnú pozíciu!",
+                    CreatedAt = DateTime.UtcNow,
+                    IsRead = false,
+                    NotificationType = EnumNotificationType.NewSuccessionNotificationType
+                };
+
+                dbContext.Notifications.Add(notification);
                 await dbContext.SaveChangesAsync();
+
+                await hubContext.Clients.User(notification.User.Id)
+                            .SendAsync("ReceiveNotification", new NotificationResponse
+                            {
+                                Id = notification.Id,
+                                Message = notification.Message,
+                                Title = NotificationHelpers.GetNotificationTitle(notification.NotificationType),
+                                ReferencedItem = notification.ReferencedItemId.ToString(),
+                                NotificationType = notification.NotificationType,
+                                CreatedAt = notification.CreatedAt,
+                                IsRead = notification.IsRead
+                            });
 
                 /*List<Notification> notifications = new List<Notification>();
 

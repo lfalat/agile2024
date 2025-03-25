@@ -12,13 +12,13 @@ internal static class NotificationHelpers
             case EnumNotificationType.GoalUpdatedNotificationType:
                 return "Cieľ aktualizovaný!";
             case EnumNotificationType.FeedbackUnsentReminderNotificationType:
-                return "Neodoslaný spätná väzba";
+                return "Neodoslaná spätná väzba";
             case EnumNotificationType.ReviewUnsentReminderNotificationType:
                 return "Neodoslaný posudok cieľa";
             case EnumNotificationType.GoalUnfinishedReminderNotificationType:
                 return "Nedokončený cieľ!";
             case EnumNotificationType.NewSuccessionNotificationType:
-                return "";
+                return "Nové nástupníctvo!";
             default:
                 return "Nová notifikácia!";
         }
