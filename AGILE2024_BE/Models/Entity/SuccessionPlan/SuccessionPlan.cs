@@ -5,19 +5,20 @@ namespace AGILE2024_BE.Models.Entity.SuccessionPlan
     public class SuccessionPlan
     {
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public Guid id { get; set; }
-        [ForeignKey(nameof(EmployeeCard) + "Id")]
-        public EmployeeCard successor { get; set; }
-        public EmployeeCard leavingPerson { get; set; }
+        public required Guid id { get; set; }
+        [ForeignKey("successorId")]
+        public EmployeeCard? successor { get; set; }
+        [ForeignKey("leavingPersonId")]
+        public required EmployeeCard leavingPerson { get; set; }
 
         [ForeignKey(nameof(LeaveType) + "Id")]
-        public LeaveType leaveType { get; set; }
+        public required LeaveType leaveType { get; set; }
 
         [ForeignKey(nameof(ReadyStatus) + "Id")]
-        public ReadyStatus readyStatus { get; set; }
+        public required ReadyStatus readyStatus { get; set; }
 
-        public string reason { get; set; }
-        public DateOnly leaveDate { get; set; }
-        public bool isExternal { get; set; }
+        public required string reason { get; set; }
+        public required DateOnly leaveDate { get; set; }
+        public required bool isExternal { get; set; }
     }
 }

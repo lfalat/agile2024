@@ -195,5 +195,86 @@ namespace AGILE2024_BE.Controllers
             return Ok(employeeCards);
         }
 
+        [HttpGet("GetEmployeesWithouSuperiors")]
+        public async Task<IActionResult> GetEmployeesWithouSuperiors()
+        {
+            var employeesZamestnanec = await userManager.GetUsersInRoleAsync(RolesDef.Zamestnanec);
+            var employeeCards = await dbContext.EmployeeCards
+            .Include(ec => ec.User)
+            .Where(ec => employeesZamestnanec.Contains(ec.User))
+            .Select(ec => new EmployeeCardResponse
+            {
+                EmployeeId = ec.Id,
+                Email = ec.User.Email,
+                Name = ec.User.Name ?? string.Empty,
+                TitleBefore = ec.User.Title_before ?? string.Empty,
+                TitleAfter = ec.User.Title_after ?? string.Empty,
+                Department = ec.Department.Name ?? "N/A",
+                Organization = ec.Department.Organization.Name,
+                JobPosition = ec.Level.JobPosition.Name,
+                Surname = ec.User.Surname ?? string.Empty,
+                MiddleName = ec.User.MiddleName
+            }).ToListAsync();
+
+            return Ok(employeeCards);
+        }
+
+
+        [HttpGet("GetEmployeesInTeam")]
+        public async Task<IActionResult> GetEmployeesInTeam()
+        {
+            var user = await userManager.FindByEmailAsync(User.Identity?.Name!);
+
+            if (user == null)
+            {
+                return Unauthorized("User not found.");
+            }
+            var employeesZamestnanec = await userManager.GetUsersInRoleAsync(RolesDef.Zamestnanec);
+            var employeesVeduci = await userManager.GetUsersInRoleAsync(RolesDef.Veduci);
+            var employeesSpravca = await userManager.GetUsersInRoleAsync(RolesDef.Spravca);
+
+            var allEmployees = employeesZamestnanec.Concat(employeesVeduci).Concat(employeesSpravca).Distinct().ToList();
+
+
+            var employeeCards = await dbContext.EmployeeCards
+                .Include(ec => ec.User)
+                .Include(ec => ec.Level)
+                .ThenInclude(l => l.JobPosition)
+                .Include(ec => ec.Department)
+                .ThenInclude(d => d.Organization)
+                .Where(ec => employeesZamestnanec.Contains(ec.User) || employeesVeduci.Contains(ec.User)) 
+                .ToListAsync();
+            var userDepartmentId = employeeCards
+                .FirstOrDefault(ec => ec.User.Id == user.Id && employeesVeduci.Contains(ec.User))
+                ?.Department?.Id;
+
+            if (userDepartmentId == null)
+            {
+                return NotFound("User's department (lead) not found.");
+            }
+
+            var employeesInSameDepartment = employeeCards
+                .Where(ec => ec.Department.Id == userDepartmentId && employeesZamestnanec.Contains(ec.User))
+                //.Where(ec => ec.Department.Id == userDepartmentId && allEmployees.Contains(ec.User))
+                .Select(ec => new EmployeeCardResponse
+                {
+                    EmployeeId = ec.Id,
+                    Email = ec.User.Email,
+                    Name = ec.User.Name ?? string.Empty,
+                    TitleBefore = ec.User.Title_before ?? string.Empty,
+                    TitleAfter = ec.User.Title_after ?? string.Empty,
+                    Department = ec.Department.Name ?? "N/A",
+                    Organization = ec.Department.Organization.Name,
+                    JobPosition = ec.Level.JobPosition.Name,
+                    Surname = ec.User.Surname ?? string.Empty,
+                    MiddleName = ec.User.MiddleName
+                }).ToList();
+
+            return Ok(employeesInSameDepartment);
+        }
+
+
+
+
     }
 }

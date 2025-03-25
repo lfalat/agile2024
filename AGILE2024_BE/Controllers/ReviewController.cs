@@ -142,11 +142,22 @@ namespace AGILE2024_BE.Controllers
         [HttpGet("GetReviews")]
         public async Task<IActionResult> GetAllReviews()
         {
+            ExtendedIdentityUser? user = await userManager.FindByEmailAsync(User.Identity?.Name!);
+
+            var loggedEmployee = await dbContext.EmployeeCards
+                .Include(ec => ec.User)
+                .Where(ec => ec.User.Id == user.Id).FirstOrDefaultAsync();
+
+
+            if (loggedEmployee == null)
+                return NotFound("Zamestnanec nenájdený.");
+
             var reviewRecipents = await dbContext.ReviewRecipents
                 .Include(r => r.review)
                 .Include(r => r.goalAssignment)
                 .ThenInclude(ga => ga.employee)
                 .ThenInclude(emp => emp.User)
+                .Where(emp => emp.review.sender.Id == loggedEmployee.Id)
                 .ToListAsync();
 
             var groupedReviews = reviewRecipents
@@ -410,7 +421,7 @@ namespace AGILE2024_BE.Controllers
             if (loggedEmployee == null)
                 return NotFound("Zamestnanec nenájdený.");
 
-             
+
 
             var reviewRecipients = await dbContext.ReviewRecipents
                     .Include(rr => rr.review)
