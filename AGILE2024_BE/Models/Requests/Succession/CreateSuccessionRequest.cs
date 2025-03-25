@@ -12,12 +12,13 @@
         public required string ReadyStatus { get; set; }
 
         public List<SuccessionSkillRequest> Skills { get; set; }
+        public bool isNotified { get; set; }
     }
     public class SuccessionSkillRequest
     {
         public string Description { get; set; }
         public bool IsReady { get; set; }
 
-        public bool isNotified { get; set; }
+        
     }
 }

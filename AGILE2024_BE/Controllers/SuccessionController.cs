@@ -204,6 +204,7 @@ namespace AGILE2024_BE.Controllers
                 if (!string.IsNullOrEmpty(request.SuccessorId))
                 {
                     var successorEmployeeCard = await dbContext.EmployeeCards
+                        .Include(ec => ec.User)
                         .FirstOrDefaultAsync(ec => ec.Id.ToString() == request.SuccessorId);
                     if (successorEmployeeCard != null)
                     {
@@ -229,7 +230,10 @@ namespace AGILE2024_BE.Controllers
 
                 dbContext.SuccessionPlans.Add(successionPlan);
 
-                var notification = new Notification
+                if (request.isNotified && successionPlan.successor != null) {
+                  
+
+                    var notification = new Notification
                 {
                     Id = Guid.NewGuid(),
                     User = successionPlan.successor.User,
@@ -254,60 +258,7 @@ namespace AGILE2024_BE.Controllers
                                 CreatedAt = notification.CreatedAt,
                                 IsRead = notification.IsRead
                             });
-
-                /*List<Notification> notifications = new List<Notification>();
-
-                if (request.EmployeeIds != null && request.EmployeeIds.Any())
-                {
-                    foreach (var employeeId in request.EmployeeIds)
-                    {
-                        var employee = await dbContext.EmployeeCards
-                            .Include(e => e.User)
-                            .FirstOrDefaultAsync(e => e.Id.ToString() == employeeId);
-
-                        if (employee != null)
-                        {
-                            var goalAssignment = new GoalAssignment
-                            {
-                                goal = newGoal,
-                                employee = employee
-                            };
-
-                            dbContext.GoalAssignments.Add(goalAssignment);
-
-                            var notification = new Notification
-                            {
-                                Id = Guid.NewGuid(),
-                                User = employee.User,
-                                ReferencedItemId = newGoal.id,
-                                Message = $"Bol Vám priradený nový cieľ '{newGoal.name}'. Prosím, pre bližšie informácie si pozrite detail cieľa !",
-                                CreatedAt = DateTime.UtcNow,
-                                IsRead = false,
-                                NotificationType = EnumNotificationType.GoalCreatedNotificationType
-                            };
-
-                            notifications.Add(notification);
-                        }
-                    }
-                    dbContext.Notifications.AddRange(notifications);
-                    await dbContext.SaveChangesAsync();
-
-                    foreach (var notification in notifications)
-                    {
-                        await hubContext.Clients.User(notification.User.Id)
-                            .SendAsync("ReceiveNotification", new NotificationResponse
-                            {
-                                Id = notification.Id,
-                                Message = notification.Message,
-                                Title = NotificationHelpers.GetNotificationTitle(notification.NotificationType),
-                                //Link = $"/goals/{notification.ReferencedItemId}",
-                                ReferencedItem = notification.ReferencedItemId.ToString(),
-                                NotificationType = notification.NotificationType,
-                                CreatedAt = notification.CreatedAt,
-                                IsRead = notification.IsRead
-                            });
-                    }
-                }*/
+                }
 
                 return Ok(new { message = "Succession plan created successfully." });
             }
