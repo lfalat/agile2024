@@ -40,7 +40,7 @@ namespace AGILE2024_BE
                 {
                     new LeaveType { description = "Kritický odchod" },
                     new LeaveType { description = "Plánovaný odchod" },
-                    new LeaveType { description = "Redundancia týmu" }
+                    new LeaveType { description = "Redundancia tímu" },
                 };
                 foreach (var leaveType in leaveTypes)
                 {
@@ -52,6 +52,7 @@ namespace AGILE2024_BE
                         await context.LeaveTypes.AddAsync(leaveType);
                     }
                 }
+
                 //Seed FeedbackRequestStatuses
                 var feedbackRequestStatuses = new List<FeedbackRequestStatus>
                 {
