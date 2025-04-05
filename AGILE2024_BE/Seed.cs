@@ -92,7 +92,8 @@ namespace AGILE2024_BE
                 var goalCategories = new List<GoalCategory>
                 {
                     new GoalCategory { description = "Výkonostný rozvoj" },
-                    new GoalCategory { description = "Osobný rozvoj" }
+                    new GoalCategory { description = "Osobný rozvoj" },
+                    new GoalCategory { description = "Nástupnícky cieľ" }
                 };
                 foreach (var goalCategory in goalCategories)
                 {
