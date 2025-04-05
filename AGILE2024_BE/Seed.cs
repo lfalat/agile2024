@@ -1,5 +1,7 @@
 ﻿﻿using AGILE2024_BE.Data;
 using AGILE2024_BE.Models;
+using AGILE2024_BE.Models.Entity.Adaptation;
+using AGILE2024_BE.Models.Entity.Courses;
 using AGILE2024_BE.Models.Entity.SuccessionPlan;
 using AGILE2024_BE.Models.Identity;
 using Microsoft.AspNetCore.Identity;
@@ -18,6 +20,58 @@ namespace AGILE2024_BE
 
             if (_roleManager != null && _userManager != null)
             {
+                //Seed AdaptationState
+                var adaptationStates = new List<AdaptationState>
+                {
+                    new AdaptationState { DescriptionState = "Nezadané" },
+                    new AdaptationState { DescriptionState = "Zadané" },
+                    new AdaptationState { DescriptionState = "V procese" },
+                    new AdaptationState { DescriptionState = "Splnené " }
+                };
+                foreach (var adaptationState in adaptationStates)
+                {
+                    var existingContractType = await context.AdaptationStates
+                        .FirstOrDefaultAsync(ct => ct.DescriptionState == adaptationState.DescriptionState);
+
+                    if (existingContractType == null)
+                    {
+                        await context.AdaptationStates.AddAsync(adaptationState);
+                    }
+                }
+                //Seed CourseState
+                var courseStates = new List<CourseState>
+                {
+                    new CourseState { DescriptionState = "Splnený" },
+                    new CourseState { DescriptionState = "Prebiehajúci" },
+                    new CourseState { DescriptionState = "Nezačatý" },
+                    new CourseState { DescriptionState = "Nesplnený" }
+                };
+                foreach (var courseState in courseStates)
+                {
+                    var existingContractType = await context.CourseStates
+                        .FirstOrDefaultAsync(ct => ct.DescriptionState == courseState.DescriptionState);
+
+                    if (existingContractType == null)
+                    {
+                        await context.CourseStates.AddAsync(courseState);
+                    }
+                }
+                //Seed CoursesType
+                var coursesTypes = new List<CoursesType>
+                {
+                    new CoursesType { DescriptionType = "Kurz" },
+                    new CoursesType { DescriptionType = "Školenie" }
+                };
+                foreach (var coursesType in coursesTypes)
+                {
+                    var existingContractType = await context.CoursesTypes
+                        .FirstOrDefaultAsync(ct => ct.DescriptionType == coursesType.DescriptionType);
+
+                    if (existingContractType == null)
+                    {
+                        await context.CoursesTypes.AddAsync(coursesType);
+                    }
+                }
                 //Seed ReadyStatus
                 var readyStatuses = new List<ReadyStatus>
                 {
