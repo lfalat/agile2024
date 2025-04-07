@@ -9,6 +9,6 @@ namespace AGILE2024_BE.Models.Response
         public DateOnly readyDate { get; set; }
         public string taskState { get; set; }
 
-        public DateOnly endDate { get; set; }
+        public DateOnly? endDate { get; set; }
     }
 }

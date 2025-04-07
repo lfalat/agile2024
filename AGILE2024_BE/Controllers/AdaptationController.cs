@@ -54,7 +54,7 @@ namespace AGILE2024_BE.Controllers
                          nameEmployee = $"{a.Employee.User.Name} {a.Employee.User.Surname}",
                          nameSupervisor = $"{a.CreatedEmployee.User.Name} {a.CreatedEmployee.User.Surname}",
                          readyDate = a.ReadyDate,
-                         endDate = a.EndDate,
+                         endDate = a.EndDate == DateOnly.MinValue ? null: a.EndDate,
                          taskState = a.State.DescriptionState
                      })
                      .ToListAsync();
@@ -120,22 +120,42 @@ namespace AGILE2024_BE.Controllers
         {
             var adaptationId = Guid.NewGuid();
 
-            var employeerUser = await dbContext.Users
-               .FirstOrDefaultAsync(u => u.Id == data.EmployeeId.ToString());
 
             var employeeEmployeeCard = await dbContext.EmployeeCards
-                .FirstOrDefaultAsync(ec => ec.User.Id == employeerUser.Id);
+                .FirstOrDefaultAsync(ec => ec.Id == data.EmployeeId);
 
-
-            var createUser = await dbContext.Users
-             .FirstOrDefaultAsync(u => u.Id == data.CreatedEmployeeId.ToString());
 
             var createEmployeeCard = await dbContext.EmployeeCards
-                .FirstOrDefaultAsync(ec => ec.User.Id == createUser.Id);
+                .FirstOrDefaultAsync(ec => ec.Id == data.CreatedEmployeeId);
+
+
+            //new AdaptationState { DescriptionState = "Nezadané" },
+            //new AdaptationState { DescriptionState = "Zadané" },
+            //new AdaptationState { DescriptionState = "V procese" },
+            //new AdaptationState { DescriptionState = "Splnené " }
 
 
             var state = await dbContext.AdaptationStates
-                .FirstOrDefaultAsync(s => s.Id == data.StateId);
+                 .FirstOrDefaultAsync(s => s.DescriptionState == "Nezadané"); ;
+            if (data.Tasks.Count == 0)
+            {
+                state = await dbContext.AdaptationStates
+                 .FirstOrDefaultAsync(s => s.DescriptionState == "Nezadané");
+            } else if (data.Tasks.Count > 0) {
+                state = await dbContext.AdaptationStates
+                     .FirstOrDefaultAsync(s => s.DescriptionState == "Zadané");
+            }
+
+            if (data.Tasks.All(t => t.IsDone))
+            {
+                state = await dbContext.AdaptationStates
+                 .FirstOrDefaultAsync(s => s.DescriptionState == "Splnené ");
+            } else {
+                if (data.Tasks.Any(t => t.IsDone)) { 
+                    state = await dbContext.AdaptationStates
+                    .FirstOrDefaultAsync(s => s.DescriptionState == "V procese");
+                }
+            }
 
             var adaptation = new Adaptation
             {
@@ -143,7 +163,7 @@ namespace AGILE2024_BE.Controllers
                 Employee = employeeEmployeeCard,
                 CreatedEmployee = createEmployeeCard,
                 ReadyDate = data.Tasks.Max(t => t.FinishDate),
-                EndDate = data.Tasks.All(t => t.IsDone) ? DateOnly.FromDateTime(DateTime.Now) : default,
+                EndDate = data.Tasks.All(t => t.IsDone) ? DateOnly.FromDateTime(DateTime.Now) : DateOnly.MinValue,
                 State = state,
             };
 
@@ -181,7 +201,7 @@ namespace AGILE2024_BE.Controllers
     {
         public Guid EmployeeId { get; set; }
         public Guid CreatedEmployeeId { get; set; }
-        public Guid StateId { get; set; }  // e.g., some default state like 'InProgress'
+        public Guid StateId { get; set; }
 
         public List<AdaptationTaskRequest> Tasks { get; set; }
         public List<AdaptationDocRequest> Documents { get; set; }
