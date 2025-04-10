@@ -213,7 +213,9 @@ namespace AGILE2024_BE.Controllers
                 Organization = ec.Department.Organization.Name,
                 JobPosition = ec.Level.JobPosition.Name,
                 Surname = ec.User.Surname ?? string.Empty,
-                MiddleName = ec.User.MiddleName
+                MiddleName = ec.User.MiddleName,
+                FullName = ec.User.Name + " " + ec.User.Surname
+
             }).ToListAsync();
 
             return Ok(employeeCards);
@@ -267,7 +269,9 @@ namespace AGILE2024_BE.Controllers
                     Organization = ec.Department.Organization.Name,
                     JobPosition = ec.Level.JobPosition.Name,
                     Surname = ec.User.Surname ?? string.Empty,
-                    MiddleName = ec.User.MiddleName
+                    MiddleName = ec.User.MiddleName,
+                    FullName = ec.User.Name + " " + ec.User.Surname
+
                 }).ToList();
 
             return Ok(employeesInSameDepartment);
