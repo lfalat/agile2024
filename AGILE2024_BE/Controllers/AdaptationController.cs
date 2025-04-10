@@ -15,6 +15,7 @@ using System.Collections.Generic;
 using AGILE2024_BE.Models.Entity.Adaptation;
 using Azure.Core;
 using Azure.Storage.Blobs;
+using System.Reflection.Metadata;
 namespace AGILE2024_BE.Controllers
 {
     [Route("api/[controller]")]
@@ -203,11 +204,12 @@ namespace AGILE2024_BE.Controllers
 
                 await containerClient.CreateIfNotExistsAsync();
 
-                var extension = Path.GetExtension(req.File.FileName);
-                var blobName = $"{Guid.NewGuid()}{extension}";
+                var extension = Path.GetExtension(req.File.FileName);  
+                var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(req.File.FileName);
+                var blobName = $"{fileNameWithoutExtension}_{Guid.NewGuid()}{extension}";
                 var blob = containerClient.GetBlobClient(blobName);
-
                 await blob.UploadAsync(req.File.OpenReadStream(), overwrite: true);
+
 
 
                 var blobUrl = blob.Uri.ToString();
