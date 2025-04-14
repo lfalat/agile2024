@@ -149,5 +149,81 @@ namespace AGILE2024_BE.Controllers
             }
         }
 
+        [HttpPost("CloseCourseEmployee/{courseEmployeeId}")]
+        [Authorize]
+        public async Task<IActionResult> CloseCourse(string courseEmployeeId)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var employee = await dbContext.EmployeeCards.Include(x => x.User).FirstAsync(x => x.User.Id == userId);
+
+            if (!Guid.TryParse(userId, out Guid userGuid))
+            {
+                return BadRequest("Invalid user ID.");
+            }
+
+            var courseEmployee = await dbContext.CourseEmployees
+                .Include(ce => ce.Employee)
+                    .ThenInclude(e => e.User)
+                .Include(ce => ce.State)
+                .Include(ce => ce.Course)
+                .FirstOrDefaultAsync(ce => ce.Course.Id.ToString() == courseEmployeeId && ce.Employee == employee);
+
+            if (courseEmployee == null)
+            {
+                return NotFound(new { message = "CourseEmployee entry not found." });
+            }
+
+            var closedState = await dbContext.CourseStates.FirstOrDefaultAsync(cs => cs.DescriptionState == "Splnený");
+
+            if (closedState == null)
+            {
+                return StatusCode(500, "State 'Splnený' not found in the database.");
+            }
+
+            courseEmployee.State = closedState;
+            courseEmployee.CompletedDate = DateOnly.FromDateTime(DateTime.UtcNow);
+
+            await dbContext.SaveChangesAsync();
+
+            return Ok(new { message = "Course marked as closed." });
+        }
+
+        [HttpPost("StartCourseEmployee/{courseEmployeeId}")]
+        [Authorize]
+        public async Task<IActionResult> StartCourse(string courseEmployeeId)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var employee = await dbContext.EmployeeCards.Include(x => x.User).FirstAsync(x => x.User.Id == userId);
+
+            if (!Guid.TryParse(userId, out Guid userGuid))
+            {
+                return BadRequest("Invalid user ID.");
+            }
+
+            var courseEmployee = await dbContext.CourseEmployees
+                .Include(ce => ce.Employee)
+                    .ThenInclude(e => e.User)
+                .Include(ce => ce.State)
+                .Include(ce => ce.Course)
+                .FirstOrDefaultAsync(ce => ce.Course.Id.ToString() == courseEmployeeId && ce.Employee == employee);
+
+            if (courseEmployee == null)
+            {
+                return NotFound(new { message = "CourseEmployee entry not found." });
+            }
+
+            var newState = await dbContext.CourseStates.FirstOrDefaultAsync(cs => cs.DescriptionState == "Prebiehajúci");
+
+            if (newState == null)
+            {
+                return StatusCode(500, "State 'Prebiehajúci' not found in the database.");
+            }
+
+            courseEmployee.State = newState;
+
+            await dbContext.SaveChangesAsync();
+
+            return Ok(new { message = "Course marked as closed." });
+        }
     }
 }

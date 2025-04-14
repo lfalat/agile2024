@@ -35,7 +35,7 @@ namespace AGILE2024_BE.Controllers
             this.roleManager = rm;
             this.dbContext = db;
         }
-        
+
         [HttpPost("Update")]
         [Authorize(Roles = RolesDef.Spravca)]
         public async Task<IActionResult> Update([FromBody] UpdateEmployeeCardRequest employeeCardRequest)
@@ -69,7 +69,7 @@ namespace AGILE2024_BE.Controllers
 
             return Ok();
         }
-        
+
         [HttpGet("EmployeeCards")]
         //[Authorize(Roles = RolesDef.Veduci)]
         public async Task<IActionResult> EmployeeCards()
@@ -242,7 +242,7 @@ namespace AGILE2024_BE.Controllers
                 .ThenInclude(l => l.JobPosition)
                 .Include(ec => ec.Department)
                 .ThenInclude(d => d.Organization)
-                .Where(ec => employeesZamestnanec.Contains(ec.User) || employeesVeduci.Contains(ec.User)) 
+                .Where(ec => employeesZamestnanec.Contains(ec.User) || employeesVeduci.Contains(ec.User))
                 .ToListAsync();
             var userDepartmentId = employeeCards
                 .FirstOrDefault(ec => ec.User.Id == user.Id && employeesVeduci.Contains(ec.User))
@@ -274,7 +274,7 @@ namespace AGILE2024_BE.Controllers
         }
 
         [HttpGet("GetCurrentSuperiorDepartmentTeam")]
-        [Authorize(Roles = RolesDef.Veduci)]
+        [Authorize]
         public async Task<IActionResult> GetCurrentSuperiorDepartmentTeam()
         {
             var user = await userManager.FindByEmailAsync(User.Identity?.Name!);
