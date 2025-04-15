@@ -277,7 +277,36 @@ namespace AGILE2024_BE.Controllers
             return Ok(employeesInSameDepartment);
         }
 
-        [HttpGet("GetEmployeeCardLoggedIn")]
+        [HttpGet("GetCurrentSuperiorDepartmentTeam")]
+        [Authorize]
+        public async Task<IActionResult> GetCurrentSuperiorDepartmentTeam()
+        {
+            var user = await userManager.FindByEmailAsync(User.Identity?.Name!);
+            var employee = await dbContext.EmployeeCards
+                .Include(e => e.User)
+                .Include(e => e.Department)
+                    .ThenInclude(d => d.EmployeeCards)
+                        .ThenInclude(ec => ec.User)
+                .Include(e => e.Department.Organization)
+                .Include(e => e.Level)
+                    .ThenInclude(l => l.JobPosition)
+                .FirstOrDefaultAsync(x => x.User == user);
+
+            if (employee == null)
+                return NotFound("Employee not found");
+
+            var team = employee.Department.EmployeeCards.Select(ec => new
+            {
+                employeeId = ec.Id,
+                userId = ec.User.Id,
+                name = ec.User.Name + " " + ec.User.Surname,
+                department = ec.Department.Name
+            }).ToList();
+
+            return Ok(team);
+        }
+
+      [HttpGet("GetEmployeeCardLoggedIn")]
         public async Task<IActionResult> GetEmployeeCardLoggedIn()
         {
             ExtendedIdentityUser? user = await userManager.FindByEmailAsync(User.Identity?.Name!);
@@ -289,7 +318,6 @@ namespace AGILE2024_BE.Controllers
                 .Include(ec => ec.Department)
                 .ThenInclude(d => d.Organization)
                 .Where(ec => ec.User.Id == user.Id).FirstOrDefaultAsync();
-
             if (loggedEmployee == null)
                 return NotFound("Zamestnanec nenájdený.");
 
