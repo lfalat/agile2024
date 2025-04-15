@@ -338,6 +338,5 @@ namespace AGILE2024_BE.Controllers
             return Ok(employyeCard);
         }
 
-
     }
 }
