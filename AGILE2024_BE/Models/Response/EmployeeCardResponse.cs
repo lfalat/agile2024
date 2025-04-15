@@ -21,6 +21,8 @@
         public bool Archived { get; set; }
         public string EmploymentDuration { get; set; }
         public string? MiddleName { get; set; }
+        public string? FullName { get; set; }
+
     }
 
 }

@@ -420,6 +420,31 @@ namespace AGILE2024_BE.Controllers
             return $"{readyPercentage}%"; 
         }
 
+        [HttpGet("GetPersonalizedPlans/{id}")]
+        [Authorize(Roles = RolesDef.Veduci)]
+        public async Task<ActionResult<IEnumerable<SuccessionPlanResponse>>> GetPersonalizedPlans(Guid id)
+        {
+            var goalsAssigned = await dbContext.GoalAssignments
+        .Include(ga => ga.employee)
+            .ThenInclude(e => e.User)
+        .Include(ga => ga.goal)
+            .ThenInclude(g => g.category)
+        .Include(ga => ga.goal)
+            .ThenInclude(g => g.status)
+        .Where(ga => ga.employee.Id == id && ga.goal.category.description == "Nástupnícky cieľ")
+        .ToListAsync();
+
+            var result = goalsAssigned.Select(ga => new PersonalizedPlanResponse
+            {
+                EmployeeFullName = ga.employee.User.Name + " " + ga.employee.User.Surname,
+                GoalId = ga.goal.id.ToString(),
+                GoalName = ga.goal.name,
+                GoalCategory = ga.goal.category.description,
+                GoalStatus = ga.goal.status.description
+            }).ToList();
+
+            return Ok(result);
+        }
     }
 
     public class UpdateSuccessionRequest
@@ -438,5 +463,16 @@ namespace AGILE2024_BE.Controllers
         public string Description { get; set; }
         public bool IsReady { get; set; }
     }
+
+    public class PersonalizedPlanResponse
+    {
+        public string EmployeeFullName { get; set; }
+
+        public string GoalId { get; set; }
+        public string GoalName { get; set; }
+        public string GoalCategory { get; set; }
+        public string GoalStatus { get; set; }
+    }
+
 
 }
