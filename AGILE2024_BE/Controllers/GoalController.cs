@@ -202,6 +202,118 @@ namespace AGILE2024_BE.Controllers
             }
         }
 
+        [HttpPost("CreatePersonalized")]
+        [Authorize(Roles = RolesDef.Veduci)]
+        public async Task<IActionResult> CreatePersonalized([FromBody] CreateSuccessionGoalRequest request)
+        {
+            try
+            {
+                ExtendedIdentityUser? user = await userManager.FindByEmailAsync(User.Identity?.Name!);
+                if (user == null)
+                {
+                    return Unauthorized("User not found.");
+                }
+
+                if (request.EmployeeIds == null || !request.EmployeeIds.Any())
+                {
+                    return BadRequest("At least one employee must be assigned to the goal.");
+                }
+
+                var employeeCard = await dbContext.EmployeeCards
+                    .FirstOrDefaultAsync(ec => ec.User.Id == user.Id);
+                if (employeeCard == null)
+                {
+                    return Unauthorized("Employee card not found for the logged-in user.");
+                }
+                var goalCategory = await dbContext.GoalCategory
+                    .FirstOrDefaultAsync(g => g.description == "Nástupnícky cieľ");
+
+                if (goalCategory == null)
+                {
+                    return BadRequest($"Goal category {request.GoalCategory} does not exist.");
+                }
+
+                var goalStatus = await dbContext.GoalStatuses
+                .FirstOrDefaultAsync(s => s.description == "Nezačatý");
+
+                if (goalStatus == null)
+                {
+                    return BadRequest("Status 'Nezačatý' does not exist.");
+                }
+                var newGoal = new Goal
+                {
+                    name = request.Name,
+                    description = request.Description,
+                    category = goalCategory,
+                    status = goalStatus,
+                    dueDate = request.DueDate,
+                    employee = employeeCard
+                };
+                dbContext.Goals.Add(newGoal);
+                await dbContext.SaveChangesAsync();
+
+                List<Notification> notifications = new List<Notification>();
+
+                if (request.EmployeeIds != null && request.EmployeeIds.Any())
+                {
+                    foreach (var employeeId in request.EmployeeIds)
+                    {
+                        var employee = await dbContext.EmployeeCards
+                            .Include(e => e.User)
+                            .FirstOrDefaultAsync(e => e.Id.ToString() == employeeId);
+
+                        if (employee != null)
+                        {
+                            var goalAssignment = new GoalAssignment
+                            {
+                                goal = newGoal,
+                                employee = employee
+                            };
+
+                            dbContext.GoalAssignments.Add(goalAssignment);
+
+                            var notification = new Notification
+                            {
+                                Id = Guid.NewGuid(),
+                                User = employee.User,
+                                ReferencedItemId = newGoal.id,
+                                Message = $"Bol Vám priradený nový cieľ '{newGoal.name}'. Prosím, pre bližšie informácie si pozrite detail cieľa !",
+                                CreatedAt = DateTime.UtcNow,
+                                IsRead = false,
+                                NotificationType = EnumNotificationType.GoalCreatedNotificationType
+                            };
+
+                            notifications.Add(notification);
+                        }
+                    }
+                    dbContext.Notifications.AddRange(notifications);
+                    await dbContext.SaveChangesAsync();
+
+                    foreach (var notification in notifications)
+                    {
+                        await hubContext.Clients.User(notification.User.Id)
+                            .SendAsync("ReceiveNotification", new NotificationResponse
+                            {
+                                Id = notification.Id,
+                                Message = notification.Message,
+                                Title = NotificationHelpers.GetNotificationTitle(notification.NotificationType),
+                                //Link = $"/goals/{notification.ReferencedItemId}",
+                                ReferencedItem = notification.ReferencedItemId.ToString(),
+                                NotificationType = notification.NotificationType,
+                                CreatedAt = notification.CreatedAt,
+                                IsRead = notification.IsRead
+                            });
+                    }
+                }
+
+                return Ok(new { message = "Goal created successfully.", goalId = newGoal.id });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An error occurred while creating the goal.");
+            }
+        }
+
         [HttpPut("Edit/{id}")]
         [Authorize(Roles = RolesDef.Veduci)]
         public async Task<IActionResult> EditGoal(Guid id, [FromBody] EditGoalRequest request)
@@ -437,6 +549,97 @@ namespace AGILE2024_BE.Controllers
             }
         }
 
+        [HttpPut("EditPersonalized/{id}")]
+        [Authorize(Roles = RolesDef.Veduci)]
+        public async Task<IActionResult> EditPersonalized(Guid id, [FromBody] EditSuccessionGoalRequest request)
+        {
+            try
+            {
+                var goal = await dbContext.Goals
+                    .Include(g => g.category)
+                    .Include(g => g.status)
+                    .Include(g => g.employee)
+                    .FirstOrDefaultAsync(g => g.id == id);
+
+                if (goal == null)
+                {
+                    return NotFound($"Goal with ID {id} not found.");
+                }
+
+                goal.description = request.Description;
+
+                var goalStatus = await dbContext.GoalStatuses
+                    .FirstOrDefaultAsync(s => s.id.ToString() == request.Status);
+
+                if (goalStatus == null)
+                {
+                    return BadRequest($"Goal status {request.Status} does not exist.");
+                }
+
+                goal.status = goalStatus;
+
+
+                if (request.FullfilmentRate != null)
+                {
+                    goal.fullfilmentRate = request.FullfilmentRate;
+                }
+                else { goal.fullfilmentRate = null; }
+
+                if (request.FinishedDate != null &&  request.FinishedDate != "" )
+                {
+                    goal.finishedDate = DateTime.Parse(request.FinishedDate);
+                } 
+                else { goal.finishedDate = null; }
+
+                dbContext.Goals.Update(goal);
+
+                var assignedGoals = await dbContext.GoalAssignments.Include(x => x.employee.User).Where(x => x.goal.id == goal.id).ToListAsync();
+                var usersToNotify = assignedGoals.Select(x => x.employee.User).ToList();
+                //usersToNotify.Add(goal.employee.User);
+                List<Notification> notifications = new();
+
+                foreach (var user in usersToNotify.Distinct())
+                {
+                    var notification = new Notification
+                    {
+                        Id = Guid.NewGuid(),
+                        User = user,
+                        NotificationType = EnumNotificationType.GoalUpdatedNotificationType,
+                        ReferencedItemId = goal.id,
+                        Message = $"Bola zaznamenaná zmena stavu cieľa '{goal.name}'. Prosím skontrolujte si priradené ciele !",
+                        CreatedAt = DateTime.UtcNow,
+                        IsRead = false
+                    };
+
+                    notifications.Add(notification);
+                    await dbContext.Notifications.AddAsync(notification);
+                }
+
+                await dbContext.SaveChangesAsync();
+
+                foreach (var notification in notifications)
+                {
+                    await hubContext.Clients.User(notification.User.Id.ToString())
+                        .SendAsync("ReceiveNotification", new NotificationResponse
+                        {
+                            Id = notification.Id,
+                            Message = notification.Message,
+                            Title = NotificationHelpers.GetNotificationTitle(notification.NotificationType),
+                            ReferencedItem = notification.ReferencedItemId.ToString(),
+                            NotificationType = notification.NotificationType,
+                            CreatedAt = notification.CreatedAt,
+                            IsRead = notification.IsRead
+                        });
+                }
+
+                return Ok(new { message = "Goal updated successfully.", goalId = goal.id });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An error occurred while updating the goal.");
+            }
+        }
+
 
         [HttpDelete("Delete/{goalId}")]
         [Authorize(Roles = RolesDef.Veduci)]
@@ -591,4 +794,23 @@ namespace AGILE2024_BE.Controllers
             return Ok(departmentResponse);
         }
     }
+
+
+    public class CreateSuccessionGoalRequest
+    {
+        public string Name { get; set; }
+        public string GoalCategory { get; set; } = "Nástupnícky cieľ"; // predvyplnená hodnota, ak chceš
+        public string Description { get; set; }
+        public DateTime DueDate { get; set; }
+        public List<string> EmployeeIds { get; set; }
+    }
+
+    public class EditSuccessionGoalRequest
+    {
+        public string Description { get; set; }
+        public string Status { get; set; }
+        public int? FullfilmentRate { get; set; }
+        public string? FinishedDate { get; set; }
+    }
+
 }

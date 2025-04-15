@@ -175,7 +175,7 @@ namespace AGILE2024_BE.Controllers
                     .ThenInclude(e => e.User)
                 .Include(ce => ce.State)
                 .Include(ce => ce.Course)
-                .FirstOrDefaultAsync(ce => ce.Course.Id.ToString() == courseEmployeeId && ce.Employee == employee);
+                .FirstOrDefaultAsync(ce => ce.Id.ToString() == courseEmployeeId && ce.Employee.Id == employee.Id);
 
             if (courseEmployee == null)
             {
@@ -187,6 +187,10 @@ namespace AGILE2024_BE.Controllers
             if (closedState == null)
             {
                 return StatusCode(500, "State 'Splnený' not found in the database.");
+            }
+            if (closedState == courseEmployee.State)
+            {
+                return Ok();
             }
 
             courseEmployee.State = closedState;

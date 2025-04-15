@@ -213,7 +213,9 @@ namespace AGILE2024_BE.Controllers
                 Organization = ec.Department.Organization.Name,
                 JobPosition = ec.Level.JobPosition.Name,
                 Surname = ec.User.Surname ?? string.Empty,
-                MiddleName = ec.User.MiddleName
+                MiddleName = ec.User.MiddleName,
+                FullName = ec.User.Name + " " + ec.User.Surname
+
             }).ToListAsync();
 
             return Ok(employeeCards);
@@ -267,7 +269,9 @@ namespace AGILE2024_BE.Controllers
                     Organization = ec.Department.Organization.Name,
                     JobPosition = ec.Level.JobPosition.Name,
                     Surname = ec.User.Surname ?? string.Empty,
-                    MiddleName = ec.User.MiddleName
+                    MiddleName = ec.User.MiddleName,
+                    FullName = ec.User.Name + " " + ec.User.Surname
+
                 }).ToList();
 
             return Ok(employeesInSameDepartment);
@@ -300,6 +304,38 @@ namespace AGILE2024_BE.Controllers
             }).ToList();
 
             return Ok(team);
+        }
+
+      [HttpGet("GetEmployeeCardLoggedIn")]
+        public async Task<IActionResult> GetEmployeeCardLoggedIn()
+        {
+            ExtendedIdentityUser? user = await userManager.FindByEmailAsync(User.Identity?.Name!);
+
+            var loggedEmployee = await dbContext.EmployeeCards
+                .Include(ec => ec.User)
+                .Include(ec => ec.Level)
+                .ThenInclude(l => l.JobPosition)
+                .Include(ec => ec.Department)
+                .ThenInclude(d => d.Organization)
+                .Where(ec => ec.User.Id == user.Id).FirstOrDefaultAsync();
+            if (loggedEmployee == null)
+                return NotFound("Zamestnanec nenájdený.");
+
+            var employyeCard = new EmployeeCardResponse
+            {
+                EmployeeId = loggedEmployee.Id,
+                Email = loggedEmployee.User.Email,
+                Name = loggedEmployee.User.Name ?? string.Empty,
+                TitleBefore = loggedEmployee.User.Title_before ?? string.Empty,
+                TitleAfter = loggedEmployee.User.Title_after ?? string.Empty,
+                Department = loggedEmployee.Department.Name ?? "N/A",
+                Organization = loggedEmployee.Department.Organization.Name,
+                JobPosition = loggedEmployee.Level.JobPosition.Name,
+                Surname = loggedEmployee.User.Surname ?? string.Empty,
+                MiddleName = loggedEmployee.User.MiddleName
+            };
+
+            return Ok(employyeCard);
         }
 
     }
