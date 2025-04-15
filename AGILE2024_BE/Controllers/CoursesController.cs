@@ -1,13 +1,19 @@
 ﻿using AGILE2024_BE.Data;
+using AGILE2024_BE.Models.Entity.Adaptation;
 using AGILE2024_BE.Models.Entity.Courses;
 using AGILE2024_BE.Models.Identity;
+using AGILE2024_BE.Models.Requests;
+using AGILE2024_BE.Models.Requests.EmployeeCardRequests;
 using AGILE2024_BE.Models.Response;
+using Azure.Core;
+using Azure.Storage.Blobs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 
 namespace AGILE2024_BE.Controllers
@@ -40,6 +46,9 @@ namespace AGILE2024_BE.Controllers
                 .Include(ce => ce.Course)
                     .ThenInclude(c => c.CreatedEmployee)
                         .ThenInclude(e => e.Department)
+                .Include(ce => ce.Course)
+                    .ThenInclude(c => c.CreatedEmployee)
+                        .ThenInclude(c => c.User)
                 .Include(ce => ce.Employee)
                     .ThenInclude(e => e.User)
                 .Include(ce => ce.State)
@@ -225,5 +234,111 @@ namespace AGILE2024_BE.Controllers
 
             return Ok(new { message = "Course marked as closed." });
         }
+
+        [HttpPost("CreateCourse")]
+        public async Task<IActionResult> CreateCourse([FromBody] CreateCourseRequest createCourse)
+        {
+            if (createCourse == null)
+            {
+                return BadRequest("Invalid course data.");
+            }
+            if (createCourse.Employees.Count == 0)
+            {
+                return BadRequest("No employees provided.");
+            }
+
+            var createdEmployee = await dbContext.EmployeeCards
+                .Include(ec => ec.User)
+                .FirstOrDefaultAsync(ec => ec.User.Id == createCourse.CreatedUserId);
+            if (createdEmployee == null)
+            {
+                return NotFound("Creator not found.");
+            }
+            var courseType = await dbContext.CoursesTypes
+                .FirstOrDefaultAsync(ct => ct.DescriptionType == createCourse.Type);
+            if (courseType == null)
+            {
+                return NotFound("Course type not found.");
+            }
+
+            //TODO dorobiť kontrolu na dátum v minulosti
+            if (createCourse.ExpirationDate < DateTime.UtcNow)
+            {
+                return BadRequest("Expiration date cannot be in the past.");
+            }
+            var course = new Course
+            {
+                Name = createCourse.Name,
+                DetailDescription = createCourse.DetailDescription,
+                CreatedEmployee = createdEmployee,
+                Type = courseType,
+                Version = createCourse.Version,
+                ExpirationDate = DateOnly.FromDateTime(createCourse.ExpirationDate) // Explicitly convert DateTime to DateOnly
+            };
+            dbContext.Courses.Add(course);
+            var courseState = await dbContext.CourseStates
+                .FirstOrDefaultAsync(cs => cs.DescriptionState == "Nezačatý");
+            foreach (var employee in createCourse.Employees)
+            {
+                var employeeCard = await dbContext.EmployeeCards
+                    .Include(ec => ec.User)
+                    .FirstOrDefaultAsync(ec => ec.Id.ToString() == employee);
+                if (employeeCard == null)
+                {
+                    return NotFound($"Employee with ID {employee} not found.");
+                }
+                var courseEmployee = new CourseEmployee
+                {
+                    Course = course,
+                    Employee = employeeCard,
+                    State = courseState
+                };
+                dbContext.CourseEmployees.Add(courseEmployee);
+            }
+            var docEntities = createCourse.Files?
+                .Where(f => !string.IsNullOrWhiteSpace(f.FilePath))
+                .Select(f => new CoursesDoc
+                {
+                    Id = Guid.NewGuid(),
+                    Course = course,
+                    FilePath = f.FilePath,
+                    DescriptionDocs = f.Description,
+                }).ToList();
+            await dbContext.CoursesDocs.AddRangeAsync(docEntities);
+            await dbContext.SaveChangesAsync();
+            return Ok();
+        }
+
+        [HttpPost("UploadFile")]
+        public async Task<IActionResult> UploadAdaptationDoc([FromForm] FileUpload req)
+        {
+            if (req.File == null || req.File.Length == 0)
+                return BadRequest("No file uploaded.");
+
+            try
+            {
+                var blobClient = new BlobServiceClient(config.GetSection("Blob")["BlobConnect"]);
+                var containerClient = blobClient.GetBlobContainerClient("coursefiles");
+
+                await containerClient.CreateIfNotExistsAsync();
+
+                var extension = Path.GetExtension(req.File.FileName);
+                var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(req.File.FileName);
+                var blobName = $"{fileNameWithoutExtension}_{Guid.NewGuid()}{extension}";
+                var blob = containerClient.GetBlobClient(blobName);
+                await blob.UploadAsync(req.File.OpenReadStream(), overwrite: true);
+
+
+
+                var blobUrl = blob.Uri.ToString();
+
+                return Ok(new { filePath = blobUrl });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"File upload failed: {ex.Message}");
+            }
+        }
+
     }
 }
