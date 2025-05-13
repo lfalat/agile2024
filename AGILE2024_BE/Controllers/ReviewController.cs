@@ -427,7 +427,7 @@ namespace AGILE2024_BE.Controllers
                 {
                     reviewRecipient.superiorDescription = request.SuperiorDescription;
                     reviewRecipient.isSavedSuperiorDesc = true;
-                    reviewQuestion.superiorDescription = request.SuperiorDescription;
+                    reviewQuestion.superiorDescription = request.SuperiorQuestion;
                     reviewQuestion.isSavedSuperiorDesc = true;
                 }
                 // Ak je employeeDescription
