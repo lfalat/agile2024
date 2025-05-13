@@ -6,7 +6,7 @@ namespace AGILE2024_BE.Models.Requests
     {
         public string Name { get; set; }
         public string DetailDescription { get; set; }
-        public DateTime ExpirationDate { get; set; }
+        public string ExpirationDate { get; set; }
         public string CreatedUserId { get; set; }
         public string Type { get; set; }
         public int Version { get; set; }
