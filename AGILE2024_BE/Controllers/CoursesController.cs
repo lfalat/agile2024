@@ -218,7 +218,7 @@ namespace AGILE2024_BE.Controllers
                     .ThenInclude(e => e.User)
                 .Include(ce => ce.State)
                 .Include(ce => ce.Course)
-                .FirstOrDefaultAsync(ce => ce.Course.Id.ToString() == courseEmployeeId && ce.Employee == employee);
+                .FirstOrDefaultAsync(ce => ce.Id.ToString() == courseEmployeeId && ce.Employee == employee);
 
             if (courseEmployee == null)
             {
@@ -236,7 +236,7 @@ namespace AGILE2024_BE.Controllers
 
             await dbContext.SaveChangesAsync();
 
-            return Ok(new { message = "Course marked as closed." });
+            return Ok(new { message = "Course marked as open." });
         }
 
         [HttpPost("CreateCourse")]
@@ -244,11 +244,18 @@ namespace AGILE2024_BE.Controllers
         {
             if (createCourse == null)
             {
-                return BadRequest("Invalid course data.");
+                return BadRequest(new { message = "Nesprávne dáta." });
             }
+            if (string.IsNullOrEmpty(createCourse.Name))
+                return BadRequest(new { message = "Nevyplnil sa názov kurzu/školenia" });
             if (createCourse.Employees.Count == 0)
             {
-                return BadRequest("No employees provided.");
+                return BadRequest(new { message = "Neboli priradený žiadny zamestnanci" });
+            }
+
+            if (createCourse.Files.Count == 0)
+            {
+                return BadRequest(new { message = "Nebol priradený súbor" });
             }
 
             var createdEmployee = await dbContext.EmployeeCards
@@ -265,10 +272,10 @@ namespace AGILE2024_BE.Controllers
                 return NotFound("Course type not found.");
             }
 
-            //TODO dorobiť kontrolu na dátum v minulosti
-            if (createCourse.ExpirationDate < DateTime.UtcNow)
+            var date = DateTime.Parse(createCourse.ExpirationDate);
+            if (date < DateTime.UtcNow)
             {
-                return BadRequest("Expiration date cannot be in the past.");
+                return BadRequest(new { message = "Dátum expirácie nesmie byť v minulosit" });
             }
             var course = new Course
             {
@@ -277,7 +284,7 @@ namespace AGILE2024_BE.Controllers
                 CreatedEmployee = createdEmployee,
                 Type = courseType,
                 Version = createCourse.Version,
-                ExpirationDate = DateOnly.FromDateTime(createCourse.ExpirationDate) // Explicitly convert DateTime to DateOnly
+                ExpirationDate = DateOnly.FromDateTime(date) // Explicitly convert DateTime to DateOnly
             };
             dbContext.Courses.Add(course);
             var courseState = await dbContext.CourseStates
@@ -344,5 +351,52 @@ namespace AGILE2024_BE.Controllers
             }
         }
 
+        [HttpGet("GetCourseFiles")]
+        public async Task<IActionResult> GetCourseFiles(string CourseID)
+        {
+            Guid guid = Guid.Parse(CourseID);
+            var courseEmployee = await dbContext.CourseEmployees
+                .Include(x => x.Course)
+                .FirstOrDefaultAsync(x => x.Id == guid);
+            if (courseEmployee == null) 
+            { 
+                return NotFound("Files not found.");
+            }
+            var files = await dbContext.CoursesDocs.Where(x => x.Course.Id == courseEmployee.Course.Id).ToListAsync();
+            if (files == null)
+            {
+                return NotFound("Files not found.");
+            }
+            List<FileRequest> response = new List<FileRequest>();
+            foreach (var file in files)
+            {
+                response.Add(new FileRequest
+                {
+                    Description = file.DescriptionDocs,
+                    FilePath = file.FilePath
+                });
+            }
+            return Ok(response);
+        }
+
+        [HttpPost("SetCoursesAfterDate")]
+        public async Task<IActionResult> SetCoursesAfterDate()
+        {
+            var courseEmployees = await dbContext.CourseEmployees
+                .Include(ce => ce.Course)
+                .Where(ce => ce.CompletedDate == null && ce.Course.ExpirationDate < DateOnly.FromDateTime(DateTime.UtcNow))
+                .ToListAsync();
+            var expiredState = await dbContext.CourseStates.Where(x => x.DescriptionState == "Nesplnený").FirstOrDefaultAsync();
+            if (expiredState == null)
+            {
+                return NotFound("State 'Nesplnený' not found in the database.");
+            }
+            foreach (var courseEmployee in courseEmployees)
+            {
+                courseEmployee.State = expiredState;
+            }
+            await dbContext.SaveChangesAsync();
+            return Ok();
+        }
     }
 }
